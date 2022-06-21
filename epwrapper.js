@@ -175,7 +175,7 @@ class EventPortal {
 
   async getApplicationByID(applicationId, params=null) {
     try {
-        console.log(`Fetching Applications`)
+        console.log(`Fetching Application By ID`)
         let url = `applications/${applicationId}`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
@@ -187,7 +187,7 @@ class EventPortal {
 
   async getApplicationVersions(applicationId, params=null) {
     try {
-        console.log(`Fetching Application Versionss`)
+        console.log(`Fetching Application Versions`)
         let url = `applications/${applicationId}/versions`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
@@ -197,10 +197,10 @@ class EventPortal {
     }
   }
 
-  async getApplicationVersionByID(applicationId, versionId, params=null) {
+  async getApplicationVersionByID(versionId, params=null) {
     try {
-        console.log(`Fetching Application Versions`)
-        let url = `applications/${applicationId}/versions/${versionId}`
+        console.log(`Fetching Application Version By ID`)
+        let url = `applicationVersions/${versionId}`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
         return response.data;
@@ -208,8 +208,6 @@ class EventPortal {
         throw new Error(error)
     }
   }  
-
-
 
   /**
   * Create Event Version. If overwrite flag is true, Patches existing version if state is DRAFT. Throws error otherwise
@@ -393,6 +391,30 @@ class EventPortal {
     }
   }  
 
+  async getEventVersions(eventId, params=null) {
+    try {
+        console.log(`Fetching Events`)
+        let url = `events/${eventId}/versions`
+        url = url + (params ? `?${params}` : '');
+        const response = await this.api(this.token, 'GET', url, null)
+        return response.data;
+    } catch (error) {
+        throw new Error(error)
+    }
+  }  
+
+  async getEventVersionByID(versionId, params=null) {
+    try {
+        console.log(`Fetching Event Versions`)
+        let url = `eventVersions/${versionId}`
+        url = url + (params ? `?${params}` : '');
+        const response = await this.api(this.token, 'GET', url, null)
+        return response.data;
+    } catch (error) {
+        throw new Error(error)
+    }
+  }  
+
   /**
   * Create Schema Version. If overwrite flag is true, Patches existing version if state is DRAFT. Throws error otherwise
   *
@@ -562,6 +584,18 @@ class EventPortal {
     try {
         console.log(`Fetching Schema`)
         let url = `schemas/${schemaId}`
+        url = url + (params ? `?${params}` : '');
+        const response = await this.api(this.token, 'GET', url, null)
+        return response.data;
+    } catch (error) {
+        throw new Error(error)
+    }
+  }  
+
+  async getSchemaVersionByID(versionId, params=null) {
+    try {
+        console.log(`Fetching Schema Versions`)
+        let url = `schemaVersions/${versionId}`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
         return response.data;

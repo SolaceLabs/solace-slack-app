@@ -1,3 +1,5 @@
+const states = { 1: "Draft", 2: "Released", 3: "Deprecated", 4: "Retired" }
+
 const constructErrorUnfurl = (error) => {
   let blocks = [
     {
@@ -167,7 +169,7 @@ const buildApplicationBlocks = (results, domain) => {
                         + "/applications?selectedId=" + results[i].id + "|" + results[i].name + ">",
         },
         accessory: {
-          "action_id": "application_block_actions",
+          "action_id": "block_actions",
           "type": "static_select",
           "placeholder": {
             "type": "plain_text",
@@ -256,123 +258,128 @@ const buildApplicationBlocks = (results, domain) => {
   return blocks;
 }
 
-const buildApplicationVersionBlocks = (result, domain, item) => {
-  let blocks = [
-    {
-      type: "divider"
-    },
-    {
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: "*Discover, Visualize and Catalog Your Event Streams With PubSub+ Event Portal*\n\n\n"
-      },
-    },
-    {
-      type: "divider"
-    }
-  ];  
-  
-  let results = [].concat(result);
+const buildApplicationVersionBlocks = (results, domain) => {
+  let blocks = [];
   for (let i = 0; i < results.length; i++) {
-    let descBlocks = [];
-    let canSubBlocks = [];
-    let canPubBlocks = [];
+    let block = [];
+    block = block.concat([
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: "*Application Version[" + (results[i].version) + "]: * <https://" + domain + "/ep/designer/domains/" + results[i].applicationDomainId 
+                        + "/applications/" + results[i].applicationId 
+                        + "?domainName=" + results[i].domainName 
+                        + "&selectedId=" + results[i].id + "|" + results[i].displayName + ">",
+        },
+        accessory: {
+          "action_id": "block_actions",
+          "type": "static_select",
+          "placeholder": {
+            "type": "plain_text",
+            "emoji": true,
+            "text": "Manage"
+          },
+          "options": [
+            {
+              "text": {
+                "type": "plain_text",
+                "emoji": true,
+                "text": "Get Events"
+              },
+              "value": "getapplicationversionevents|"+results[i].id+"|"+results[i].name+"|"+results[i].applicationDomainId+"|"+results[i].domainName
+            },
+          ]
+        }      
+      },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: "*Domain:* <https://" + domain + "/ep/designer/domains/"
+                        + "?selectedDomainId=" + results[i].applicationDomainId + "|" + results[i].domainName + ">",
+        },
+      },
+    ]);
 
     if (results[i].description) {
       let desc = (results[i].description ? results[i].description.split(/\r?\n/) : "");
       desc.forEach((line, index) => desc[index] = ((line && line.length > 0) ? "_" + line + "_" : ""));
-      if (desc.length) {
-        descBlocks = descBlocks.concat([
-          {
+      block = block.concat([
+        {
+          type: "section",
+          text: {
             type: "mrkdwn",
-            text: "_Description:_ " + desc.join("\n")
+            text: desc.join("\n")
+          },
+        }
+      ]);
+    }
+
+    if (results[i].producedEvents.length) {
+      for (let j=0; j<results[i].producedEvents.length; j++) {
+        console.log("Produced Event:", results[i].producedEvents[j])
+        block = block.concat([
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*Produced Events:*\n <https://" + domain + "/ep/designer/domains/" 
+              + results[i].applicationDomainId  + "/events/" + results[i].producedEvents[j].id 
+              + "|" + results[i].producedEvents[j].name  + ">"
+            },
           }
         ]);
       }
     }
 
-    if (results[i].declaredConsumedEventVersionIds && results[i].declaredConsumedEventVersionIds.length) {
-      let list = "";
-      results[i].declaredConsumedEventVersionIds.forEach(event => list = list + "\n" + event.name);
-      if (results[i].declaredConsumedEventVersionIds.length) {
-        canSubBlocks = [
+    if (results[i].consumedEvents.length) {
+      for (let j=0; j<results[i].consumedEvents.length; j++) {
+        console.log("Consumed Event:", results[i].consumedEvents[j])
+        block = block.concat([
           {
-            type: "mrkdwn",
-            text: "_Can Subscribe:_ \n" + list
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*Consumed Events:*\n <https://" + domain + "/ep/designer/domains/" 
+              + results[i].applicationDomainId  + "/events/" + results[i].consumedEvents[j].id 
+              + "|" + results[i].consumedEvents[j].name  + ">"
+            },
           }
-        ];
+        ]);
       }
     }
 
-    if (results[i].declaredProducedEventVersionIds && results[i].declaredProducedEventVersionIds.length) {
-      let list = "";
-      results[i].declaredProducedEventVersionIds.forEach(event => list = list + "\n" + event.name);
-      if (results[i].declaredProducedEventVersionIds.length) {
-        canPubBlocks = [
-          {
-            type: "mrkdwn",
-            text: "_Can Publish:_ \n" + list
-          }
-        ];
-      }
-    }
-console.log(' I AM HERE ')
-    blocks = blocks.concat([
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "*Domain:* <https://" + domain + "/ep/designer/domains?selectedDomainId=" + results[i].applicationDomainId + "|" + results[i].domainName + ">"
-        },
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "*Application:* <https://" + domain + "/ep/designer/domains/" + results[i].applicationDomainId 
-                  + "/applications?selectedId=" + results[i].id + "|" + results[i].name + ">"
-        } 
-      },
-      {
-        "type": "section",
-        "fields": [
-          {
-            "type": "mrkdwn",
-            "text": "_Version:_ " + results[i].version
-          },
-          {
-            "type": "mrkdwn",
-            "text": "_Name:_ " + results[i].displayName
-          },
-          ...descBlocks,
-          {
-            "type": "mrkdwn",
-            "text": "_State:_ " + results[i].state
-          },
-          ...canSubBlocks,
-          ...canPubBlocks
-        ]
-      },
-    ]);
+    block = block.concat({
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "_State:_ " + states[results[i].stateId]
+        },      
+        {
+          "type": "mrkdwn",
+          "text": "_Produced Events Count:_ " + results[i].producedEvents.length
+        },      
+        {
+          "type": "mrkdwn",
+          "text": "_Consumed Events Count:_ " + results[i].consumedEvents.length
+        },      
+        {
+          "type": "mrkdwn",
+          "text": "_Consumers:_ " + results[i].consumers.length
+        },      
 
-    if (item && item.selectedVersionId) {
-      blocks = blocks.concat({
-        "type": "context",
-        "elements": [
-          {
-            "type": "mrkdwn",
-            "text": "_Version:_ " + results[i].displayName + " (" + results[i].version + ")"
-          },      
-        ]
-      });
-    }
+      ]
+    });
 
-    blocks = blocks.concat([
+    block = block.concat([
       {
         type: "divider"
       }
     ]);
+
+    blocks.push(block);
   }
 
   return blocks;
@@ -392,7 +399,7 @@ const buildEventBlocks = (results, domain) => {
                     + "|" + results[i].name + ">"
         },
         accessory: {
-          "action_id": "event_block_actions",
+          "action_id": "block_actions",
           "type": "static_select",
           "placeholder": {
             "type": "plain_text",
@@ -400,6 +407,14 @@ const buildEventBlocks = (results, domain) => {
             "text": "Manage"
           },
           "options": [
+            {
+              "text": {
+                "type": "plain_text",
+                "emoji": true,
+                "text": "Get Versions"
+              },
+              "value": "geteventversions|"+results[i].id+"|"+results[i].name+"|"+results[i].applicationDomainId+"|"+results[i].domainName
+            },
             {
               "text": {
                 "type": "plain_text",
@@ -422,12 +437,14 @@ const buildEventBlocks = (results, domain) => {
     ]);
 
     if (results[i].description) {
+      let desc = (results[i].description ? results[i].description.split(/\r?\n/) : "");
+      desc.forEach((line, index) => desc[index] = ((line && line.length > 0) ? "_" + line + "_" : ""));
       block = block.concat([
         {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: "*Description:* " + results[i].description
+            text: desc.join("\n")
           },
         }
       ]);
@@ -449,6 +466,107 @@ const buildEventBlocks = (results, domain) => {
           "text": "_Shared:_ " + results[i].shared
         },      
 
+      ]
+    });    
+
+
+    block = block.concat([
+      {
+        type: "divider"
+      }
+    ]);
+
+    blocks.push(block);
+  }
+
+  return blocks;
+}
+
+const buildEventVersionBlocks = (results, domain) => {
+  let blocks = [];
+  for (let i = 0; i < results.length; i++) {
+    let block = [];
+    block = block.concat([
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: "*Event:* <https://" + domain + "/ep/designer/domains/" 
+                    + results[i].applicationDomainId  + "/events/" + results[i].eventId 
+                    + "?selectedVersionId=" + results[i].id
+                    + "|" + results[i].displayName + " (" + results[i].version + ")>"
+        },
+      },
+    ]);
+
+    if (results[i].description) {
+      let desc = (results[i].description ? results[i].description.split(/\r?\n/) : "");
+      desc.forEach((line, index) => desc[index] = ((line && line.length > 0) ? "_" + line + "_" : ""));
+      block = block.concat([
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: desc.join("\n")
+          },
+        }
+      ]);
+    }
+
+    if (results[i].producingApps.length) {
+      for (let j=0; j<results[i].producingApps.length; j++) {
+        console.log("Producing Apps:", results[i].producingApps[j])
+        block = block.concat([
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*Producing Apps:*\n <https://" + domain + "/ep/designer/domains/" 
+              + results[i].applicationDomainId  + "/applications/" + results[i].producingApps[j].applicationId 
+              + "?domainName=" + results[i].domainName 
+              + "&selectedId=" + results[i].producingApps[j].id 
+              + "|" + results[i].producingApps[j].applicationName  + ">"
+            },
+          }
+        ]);
+      }
+    }
+
+    if (results[i].consumingApps.length) {
+      for (let j=0; j<results[i].consumingApps.length; j++) {
+        console.log("Producing Apps:", results[i].consumingApps[j])
+        block = block.concat([
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*Consuming Apps:*\n <https://" + domain + "/ep/designer/domains/" 
+              + results[i].applicationDomainId  + "/applications/" + results[i].consumingApps[j].applicationId 
+              + "?domainName=" + results[i].domainName 
+              + "&selectedId=" + results[i].consumingApps[j].id 
+              + "|" + results[i].consumingApps[j].applicationName  + ">"
+            },
+          }
+        ]);
+      }
+    }
+
+    console.log(results[i].producingApps, results[i].consumingApps);
+    block = block.concat({
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "_State:_ " + states[results[i].stateId]
+        },      
+        {
+          "type": "mrkdwn",
+          "text": "_Producing Applications Count:_ " + results[i].producingApps.length
+        },      
+        {
+          "type": "mrkdwn",
+          "text": "_Consuming Applicationsts Count:_ " + results[i].consumingApps.length
+        },      
       ]
     });    
 
@@ -479,7 +597,7 @@ const buildSchemaBlocks = (results, domain, item) => {
                     + "|" + results[i].name + ">"
         },
         accessory: {
-          "action_id": "event_block_actions",
+          "action_id": "block_actions",
           "type": "static_select",
           "placeholder": {
             "type": "plain_text",
@@ -491,7 +609,7 @@ const buildSchemaBlocks = (results, domain, item) => {
               "text": {
                 "type": "plain_text",
                 "emoji": true,
-                "text": "Get Schemas"
+                "text": "Get Versions"
               },
               "value": "getschemaversions|"+results[i].id+"|"+results[i].name+"|"+results[i].applicationDomainId+"|"+results[i].domainName
             }
@@ -508,12 +626,14 @@ const buildSchemaBlocks = (results, domain, item) => {
     ]);
 
     if (results[i].description) {
+      let desc = (results[i].description ? results[i].description.split(/\r?\n/) : "");
+      desc.forEach((line, index) => desc[index] = ((line && line.length > 0) ? "_" + line + "_" : ""));
       block = block.concat([
         {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: "*Description:* " + results[i].description
+            text: desc.join("\n")
           },
         }
       ]);
@@ -579,5 +699,6 @@ module.exports = {
   buildApplicationVersionBlocks,
   buildApplicationBlocks,
   buildEventBlocks,
+  buildEventVersionBlocks,
   buildSchemaBlocks,
 };
