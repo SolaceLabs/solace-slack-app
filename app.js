@@ -1,9 +1,8 @@
 const { App, LogLevel } = require("@slack/bolt");
 const { echoSlashCommand, solaceSlashCommand } = require('./appCommand');
 const { appHomeOpenedEvent, appLinkSharedEvent } = require('./appEvent');
-const { helloMessage, getApplicationMessage } = require('./appMessage');
-const { blockActions, applicationBlockActions, eventBlockActions, 
-        schemaBlockActions, addTokenAction } = require('./appActions');
+const { helloMessage } = require('./appMessage');
+const { blockActions, authorizeEPTokenAction, modifyEPTokenAction, getMoreResources, showHelp, showExamples } = require('./appActions');
 const { modalView } = require('./appViews');
 
 require("dotenv").config();
@@ -26,10 +25,17 @@ app.event('link_shared', appLinkSharedEvent);
 app.message('hello', helloMessage);
 
 app.action('block_actions', blockActions);
-// app.action('application_block_actions', applicationBlockActions);
-// app.action('event_block_actions', eventBlockActions);
-// app.action('schema_block_actions', schemaBlockActions);
-app.action('add_token', addTokenAction);
+app.action('click_autorize', authorizeEPTokenAction);
+app.action('click_show_help', showHelp);
+app.action('click_get_all', getMoreResources);
+app.action('click_get_more', getMoreResources);
+
+app.action('click_examples_domains', showExamples);
+app.action('click_examples_applications', showExamples);
+app.action('click_examples_events', showExamples);
+app.action('click_examples_schemas', showExamples);
+
+app.action('add_token', modifyEPTokenAction);
 
 app.view('modal_view', modalView);
 

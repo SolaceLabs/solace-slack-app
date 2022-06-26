@@ -604,6 +604,17 @@ class EventPortal {
     }
   }  
 
+  async getSchemaVersions(schemaId, params=null) {
+    try {
+        console.log(`Fetching Schema Versions`)
+        let url = `schemas/${schemaId}/versions`
+        url = url + (params ? `?${params}` : '');
+        const response = await this.api(this.token, 'GET', url, null)
+        return response.data;
+    } catch (error) {
+        throw new Error(error)
+    }
+  }  
   /**
   * Get Application DomainID.
   *

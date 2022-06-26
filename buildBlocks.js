@@ -45,9 +45,25 @@ const constructErrorUnfurl = (error) => {
   return blocks;
 }
 
-const buildDomainBlocks = (results, domain) => {
+const buildDomainBlocks = (results, domain, next=null) => {
   let blocks = [];
   
+  let getstr = undefined;
+  let pageStart = 0;
+  if (next && next.options && next.cmd && next.cmd.scope !== 'id') {
+    if (next.options.pageSize === 1) {
+      next.options.pageNumber = 1;
+      next.options.pageSize = 5;
+      getstr = "Get all";
+    } else if (results.length === next.options.pageSize) {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+      next.options.pageNumber++;
+      getstr = "Get more"
+    } else {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+    }
+  }
+
   for (let i = 0; i < results.length; i++) {
     let block = [];
     block = block.concat([
@@ -55,7 +71,7 @@ const buildDomainBlocks = (results, domain) => {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: "*Domain [" + (i+1) + "]: * <https://" + domain + "/ep/designer/domains?selectedDomainId=" + results[i].id + "|" + results[i].name + ">",
+          text: "*Domain [" + (pageStart+i+1) + "]:*"
         },
         accessory: {
           "action_id": "block_actions",
@@ -92,7 +108,21 @@ const buildDomainBlocks = (results, domain) => {
             },
           ]
         }      
+      },
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Domain*"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains?selectedDomainId=" + results[i].id + "|" + results[i].name + ">",
+          },
+        ]
       }
+
     ]);
 
     if (results[i].description) {
@@ -101,10 +131,16 @@ const buildDomainBlocks = (results, domain) => {
       block = block.concat([
         {
           type: "section",
-          text: {
-            type: "mrkdwn",
-            text: desc.join("\n")
-          },
+          fields: [
+            {
+              type: "mrkdwn",
+              text: "*Description:*"
+            },
+            {
+              type: "mrkdwn",
+              text: desc.join("\n")
+            },
+          ]
         }
       ]);
     }
@@ -150,14 +186,52 @@ const buildDomainBlocks = (results, domain) => {
         type: "divider"
       }
     ]);
+
+    if (i === results.length - 1 && getstr) {
+      block = block.concat([
+        {
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: getstr
+              },
+              action_id: "click_get_all",
+              value: JSON.stringify(next)
+            },
+          ]
+        },
+        {
+          type: "divider"
+        }
+      ]);
+    }
     blocks.push(block);
   }
 
   return blocks;
 }
 
-const buildApplicationBlocks = (results, domain) => {
+const buildApplicationBlocks = (results, domain, next=null) => {
   let blocks = [];
+  let getstr = undefined;
+  let pageStart = 0;
+  if (next && next.options && next.cmd && next.cmd.scope !== 'id') {
+    if (next.options.pageSize === 1) {
+      next.options.pageNumber = 1;
+      next.options.pageSize = 5;
+      getstr = "Get all";
+    } else if (results.length === next.options.pageSize) {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+      next.options.pageNumber++;
+      getstr = "Get more"
+    } else {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+    }
+  }
+
   for (let i = 0; i < results.length; i++) {
     let block = [];
     block = block.concat([
@@ -165,8 +239,7 @@ const buildApplicationBlocks = (results, domain) => {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: "*Application [" + (i+1) + "]: * <https://" + domain + "/ep/designer/domains/" + results[i].applicationDomainId 
-                        + "/applications?selectedId=" + results[i].id + "|" + results[i].name + ">",
+          text: "*Application [" + (pageStart+i+1) + "]:*",
         },
         accessory: {
           "action_id": "block_actions",
@@ -206,11 +279,31 @@ const buildApplicationBlocks = (results, domain) => {
       },
       {
         type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "*Domain:* <https://" + domain + "/ep/designer/domains/"
-                        + "?selectedDomainId=" + results[i].applicationDomainId + "|" + results[i].domainName + ">",
-        },
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Application: *"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains/" + results[i].applicationDomainId 
+                          + "/applications?selectedId=" + results[i].id + "|" + results[i].name + ">",
+          },
+        ]
+      },
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Domain:*"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains/"
+                          + "?selectedDomainId=" + results[i].applicationDomainId + "|" + results[i].domainName + ">",
+          },
+        ]
       },
     ]);
 
@@ -220,10 +313,16 @@ const buildApplicationBlocks = (results, domain) => {
       block = block.concat([
         {
           type: "section",
-          text: {
-            type: "mrkdwn",
-            text: desc.join("\n")
-          },
+          fields: [
+            {
+              type: "mrkdwn",
+              text: "*Description:*"
+            },
+            {
+              type: "mrkdwn",
+              text: desc.join("\n")
+            },
+          ]
         }
       ]);
     }
@@ -252,53 +351,104 @@ const buildApplicationBlocks = (results, domain) => {
       }
     ]);
 
+    if (i === results.length - 1 && getstr) {
+      block = block.concat([
+        {
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: getstr
+              },
+              action_id: "click_get_all",
+              value: JSON.stringify(next)
+            },
+          ]
+        },
+        {
+          type: "divider"
+        }
+      ]);
+    }
     blocks.push(block);
   }
 
   return blocks;
 }
 
-const buildApplicationVersionBlocks = (results, domain) => {
+const buildApplicationVersionBlocks = (results, domain, next=null) => {
   let blocks = [];
+  let getstr = undefined;
+  let pageStart = 0;
+  if (next && next.options && next.cmd && next.cmd.scope !== 'id') {
+    if (next.options.pageSize === 1) {
+      next.options.pageNumber = 1;
+      next.options.pageSize = 5;
+      getstr = "Get all";
+    } else if (results.length === next.options.pageSize) {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+      next.options.pageNumber++;
+      getstr = "Get more"
+    } else {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+    }
+  }
+
   for (let i = 0; i < results.length; i++) {
     let block = [];
     block = block.concat([
       {
         type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "*Application Version[" + (results[i].version) + "]: * <https://" + domain + "/ep/designer/domains/" + results[i].applicationDomainId 
-                        + "/applications/" + results[i].applicationId 
-                        + "?domainName=" + results[i].domainName 
-                        + "&selectedId=" + results[i].id + "|" + results[i].displayName + ">",
-        },
-        accessory: {
-          "action_id": "block_actions",
-          "type": "static_select",
-          "placeholder": {
-            "type": "plain_text",
-            "emoji": true,
-            "text": "Manage"
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Application:*"
           },
-          "options": [
-            {
-              "text": {
-                "type": "plain_text",
-                "emoji": true,
-                "text": "Get Events"
-              },
-              "value": "getapplicationversionevents|"+results[i].id+"|"+results[i].name+"|"+results[i].applicationDomainId+"|"+results[i].domainName
-            },
-          ]
-        }      
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains/" + results[i].application.applicationDomainId 
+                          + "/applications/" + results[i].applicationId
+                          + "?domainName=" + results[i].domainName + "|" + results[i].application.name + ">",
+          },
+        ]
       },
+    ]);
+
+    block = block.concat([
       {
         type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "*Domain:* <https://" + domain + "/ep/designer/domains/"
-                        + "?selectedDomainId=" + results[i].applicationDomainId + "|" + results[i].domainName + ">",
-        },
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Domain:*"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains/"
+                          + "?selectedDomainId=" + results[i].application.applicationDomainId  + "|" + results[i].domainName + ">",
+          },
+        ]
+      }
+    ]);
+
+    block = block.concat([
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Application Version [" + (pageStart+i+1) + "]:*"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains/" + results[i].application.applicationDomainId 
+                          + "/applications/" + results[i].applicationId 
+                          + "?domainName=" + results[i].domainName 
+                          + "&selectedVersionId=" + results[i].id + "|" + results[i].displayName + " (" + results[i].version + ") >",
+          },
+        ]
       },
     ]);
 
@@ -308,47 +458,69 @@ const buildApplicationVersionBlocks = (results, domain) => {
       block = block.concat([
         {
           type: "section",
-          text: {
-            type: "mrkdwn",
-            text: desc.join("\n")
-          },
+          fields: [
+            {
+              type: "mrkdwn",
+              text: "*Description:*"
+            },
+            {
+              type: "mrkdwn",
+              text: desc.join("\n")
+            },
+          ]
         }
       ]);
     }
 
     if (results[i].producedEvents.length) {
+      let fields = [{ 
+        "type": "mrkdwn", 
+        "text": "*Produced Events*" 
+      }];
       for (let j=0; j<results[i].producedEvents.length; j++) {
-        console.log("Produced Event:", results[i].producedEvents[j])
-        block = block.concat([
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "*Produced Events:*\n <https://" + domain + "/ep/designer/domains/" 
-              + results[i].applicationDomainId  + "/events/" + results[i].producedEvents[j].id 
-              + "|" + results[i].producedEvents[j].name  + ">"
-            },
-          }
-        ]);
+        fields.push({
+            "type": "mrkdwn",
+            "text": "<https://" + domain + "/ep/designer/domains/" 
+                      + results[i].application.applicationDomainId + "/events/" + results[i].producedEvents[j].id 
+                      + "|" + results[i].producedEvents[j].name  + ">"
+        });
+        fields.push({
+          "type": "mrkdwn",
+          "text": " "
+        });
       }
+      block = block.concat([
+        {
+          "type": "section",
+          "fields": fields
+        }
+      ]);  
     }
 
     if (results[i].consumedEvents.length) {
+      let fields = [{ 
+        "type": "mrkdwn", 
+        "text": "*Consumed Events*" 
+      }];
       for (let j=0; j<results[i].consumedEvents.length; j++) {
-        console.log("Consumed Event:", results[i].consumedEvents[j])
-        block = block.concat([
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "*Consumed Events:*\n <https://" + domain + "/ep/designer/domains/" 
-              + results[i].applicationDomainId  + "/events/" + results[i].consumedEvents[j].id 
-              + "|" + results[i].consumedEvents[j].name  + ">"
-            },
-          }
-        ]);
+        fields.push({
+            "type": "mrkdwn",
+            "text": "<https://" + domain + "/ep/designer/domains/" 
+                      + results[i].application.applicationDomainId  + "/events/" + results[i].consumedEvents[j].id 
+                      + "|" + results[i].consumedEvents[j].name  + ">"
+        });
+        fields.push({
+          "type": "mrkdwn",
+          "text": " "
+        });
       }
-    }
+      block = block.concat([
+        {
+          "type": "section",
+          "fields": fields
+        }
+      ]);
+    }    
 
     block = block.concat({
       "type": "context",
@@ -369,7 +541,6 @@ const buildApplicationVersionBlocks = (results, domain) => {
           "type": "mrkdwn",
           "text": "_Consumers:_ " + results[i].consumers.length
         },      
-
       ]
     });
 
@@ -379,24 +550,60 @@ const buildApplicationVersionBlocks = (results, domain) => {
       }
     ]);
 
+    if (i === results.length - 1 && getstr) {
+      block = block.concat([
+        {
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: getstr
+              },
+              action_id: "click_get_all",
+              value: JSON.stringify(next)
+            },
+          ]
+        },
+        {
+          type: "divider"
+        }
+      ]);
+    }
     blocks.push(block);
   }
 
   return blocks;
 }
 
-const buildEventBlocks = (results, domain) => {
+const buildEventBlocks = (results, domain, next=null) => {
   let blocks = [];
+  let getstr = undefined;
+  let pageStart = 0;
+  if (next && next.options && next.cmd && next.cmd.scope !== 'id') {
+    if (next.options.pageSize === 1) {
+      next.options.pageNumber = 1;
+      next.options.pageSize = 5;
+      getstr = "Get all";
+    } else if (results.length === next.options.pageSize) {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+      next.options.pageNumber++;
+      getstr = "Get more"
+    } else {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+    }
+  }
+
   for (let i = 0; i < results.length; i++) {
     let block = [];
+
     block = block.concat([
       {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: "*Event:* <https://" + domain + "/ep/designer/domains/" 
-                    + results[i].applicationDomainId  + "/events/" + results[i].id 
-                    + "|" + results[i].name + ">"
+          text: "*Event [" + (pageStart+i+1) + "]:*",
         },
         accessory: {
           "action_id": "block_actions",
@@ -415,25 +622,37 @@ const buildEventBlocks = (results, domain) => {
               },
               "value": "geteventversions|"+results[i].id+"|"+results[i].name+"|"+results[i].applicationDomainId+"|"+results[i].domainName
             },
-            {
-              "text": {
-                "type": "plain_text",
-                "emoji": true,
-                "text": "Get Schemas"
-              },
-              "value": "geteventschemas|"+results[i].id+"|"+results[i].name+"|"+results[i].applicationDomainId+"|"+results[i].domainName
-            }
           ]
-        }      
+        }   
       },
       {
         type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "*Domain:* <https://" + domain + "/ep/designer/domains?selectedDomainId=" + results[i].applicationDomainId + "|" + results[i].domainName + ">"
-        },
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Event:*"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains/" 
+                      + results[i].applicationDomainId  + "/events/" + results[i].id 
+                      + "|" + results[i].name + ">"
+          },
+        ]
       },
-
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Domain:*"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains?selectedDomainId=" + results[i].applicationDomainId + "|" + results[i].domainName + ">"
+          },
+        ]
+      }
     ]);
 
     if (results[i].description) {
@@ -442,10 +661,16 @@ const buildEventBlocks = (results, domain) => {
       block = block.concat([
         {
           type: "section",
-          text: {
-            type: "mrkdwn",
-            text: desc.join("\n")
-          },
+          fields: [
+            {
+              type: "mrkdwn",
+              text: "*Description:*"
+            },
+            {
+              type: "mrkdwn",
+              text: desc.join("\n")
+            },
+          ]
         }
       ]);
     }
@@ -476,26 +701,86 @@ const buildEventBlocks = (results, domain) => {
       }
     ]);
 
-    blocks.push(block);
+    if (i === results.length - 1 && getstr) {
+      block = block.concat([
+        {
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: getstr
+              },
+              action_id: "click_get_all",
+              value: JSON.stringify(next)
+            },
+          ]
+        },
+        {
+          type: "divider"
+        }
+      ]);
+    }
+
+    blocks = blocks.concat(block);
   }
 
   return blocks;
 }
 
-const buildEventVersionBlocks = (results, domain) => {
+const buildEventVersionBlocks = (results, domain, next=null) => {
   let blocks = [];
+  let getstr = undefined;
+  let pageStart = 0;
+  if (next && next.options && next.cmd && next.cmd.scope !== 'id') {
+    if (next.options.pageSize === 1) {
+      next.options.pageNumber = 1;
+      next.options.pageSize = 5;
+      getstr = "Get all";
+    } else if (results.length === next.options.pageSize) {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+      next.options.pageNumber++;
+      getstr = "Get more"
+    } else {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+    }
+  }
+
+  blocks.push({
+    type: "section",
+    fields: [
+      {
+        type: "mrkdwn",
+        text: "*Event:*"
+      },
+      {
+        type: "mrkdwn",
+        text: "<https://" + domain + "/ep/designer/domains/" 
+                  + results[0].applicationDomainId  + "/events/" + results[0].eventId 
+                  + "|" + results[0].event.name + ">"
+      },
+    ]
+  });
+
   for (let i = 0; i < results.length; i++) {
     let block = [];
     block = block.concat([
       {
         type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "*Event:* <https://" + domain + "/ep/designer/domains/" 
-                    + results[i].applicationDomainId  + "/events/" + results[i].eventId 
-                    + "?selectedVersionId=" + results[i].id
-                    + "|" + results[i].displayName + " (" + results[i].version + ")>"
-        },
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Event Version [" + (pageStart+i+1) + "]:*"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains/" 
+                      + results[i].applicationDomainId  + "/events/" + results[i].eventId 
+                      + "?selectedVersionId=" + results[i].id
+                      + "|" + results[i].displayName + " (" + results[i].version + ")>"
+          },
+        ]
       },
     ]);
 
@@ -505,53 +790,111 @@ const buildEventVersionBlocks = (results, domain) => {
       block = block.concat([
         {
           type: "section",
-          text: {
-            type: "mrkdwn",
-            text: desc.join("\n")
-          },
+          fields: [
+            {
+              type: "mrkdwn",
+              text: "*Description:*"
+            },
+            {
+              type: "mrkdwn",
+              text: desc.join("\n")
+            },
+          ]
         }
       ]);
     }
 
-    if (results[i].producingApps.length) {
-      for (let j=0; j<results[i].producingApps.length; j++) {
-        console.log("Producing Apps:", results[i].producingApps[j])
-        block = block.concat([
-          {
-            type: "section",
-            text: {
+    if (results[i].schema) {
+      block = block.concat([
+        {
+          type: "section",
+          fields: [
+            {
               type: "mrkdwn",
-              text: "*Producing Apps:*\n <https://" + domain + "/ep/designer/domains/" 
-              + results[i].applicationDomainId  + "/applications/" + results[i].producingApps[j].applicationId 
-              + "?domainName=" + results[i].domainName 
-              + "&selectedId=" + results[i].producingApps[j].id 
-              + "|" + results[i].producingApps[j].applicationName  + ">"
+              text: "*Schema:*"
             },
-          }
-        ]);
+            {
+              type: "mrkdwn",
+              text: "<https://" + domain + "/ep/designer/domains/" 
+                        + results[i].applicationDomainId  + "/schemas/" + results[i].schema.id 
+                        + "|" + results[i].schema.name + ">\n\n"
+                    + "    <https://" + domain + "/ep/designer/domains/" 
+                        + results[i].applicationDomainId  + "/schemas/" + results[i].schema.id 
+                        + "?selectedVersionId=" + results[i].schemaVersionId
+                        + "|" + results[i].schemaVersion.displayName + ">"
+            }
+          ]
+        },
+      ]);
+    }
+
+    if (results[i].producingApps.length) {
+      let fields = [{ 
+        "type": "mrkdwn", 
+        "text": "*Producing Applications*" 
+      }];
+      for (let j=0; j<results[i].producingApps.length; j++) {
+        fields.push({
+            "type": "mrkdwn",
+            "text": "<https://" + domain + "/ep/designer/domains/" 
+                      + results[i].applicationDomainId  + "/applications/" + results[i].producingApps[j].applicationId 
+                      + "?domainName=" + results[i].domainName 
+                      + "|" + results[i].producingApps[j].applicationName + ">\n\n"
+                    + "    <https://" + domain + "/ep/designer/domains/" 
+                      + results[i].applicationDomainId  + "/applications/" + results[i].producingApps[j].applicationId 
+                      + "?domainName=" + results[i].domainName                     
+                      + "&selectedVersionId=" + results[i].producingApps[j].id
+                      + "|" + results[i].producingApps[j].displayName  
+                      + " (" + results[i].producingApps[j].version + ")"  
+                      + ">"
+
+        });
+        fields.push({
+          "type": "mrkdwn",
+          "text": " "
+        });
       }
+      block = block.concat([
+        {
+          "type": "section",
+          "fields": fields
+        }
+      ]);  
     }
 
     if (results[i].consumingApps.length) {
+      let fields = [{ 
+        "type": "mrkdwn", 
+        "text": "*Consuming Applications*" 
+      }];
       for (let j=0; j<results[i].consumingApps.length; j++) {
-        console.log("Producing Apps:", results[i].consumingApps[j])
-        block = block.concat([
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "*Consuming Apps:*\n <https://" + domain + "/ep/designer/domains/" 
-              + results[i].applicationDomainId  + "/applications/" + results[i].consumingApps[j].applicationId 
-              + "?domainName=" + results[i].domainName 
-              + "&selectedId=" + results[i].consumingApps[j].id 
-              + "|" + results[i].consumingApps[j].applicationName  + ">"
-            },
-          }
-        ]);
+        fields.push({
+            "type": "mrkdwn",
+            "text": "<https://" + domain + "/ep/designer/domains/" 
+                      + results[i].applicationDomainId  + "/applications/" + results[i].consumingApps[j].applicationId 
+                      + "?domainName=" + results[i].domainName 
+                      + "|" + results[i].consumingApps[j].applicationName + ">\n\n"
+                    + "    <https://" + domain + "/ep/designer/domains/" 
+                      + results[i].applicationDomainId  + "/applications/" + results[i].consumingApps[j].applicationId 
+                      + "?domainName=" + results[i].domainName                     
+                      + "&selectedVersionId=" + results[i].consumingApps[j].id
+                      + "|" + results[i].consumingApps[j].displayName  
+                      + " (" + results[i].consumingApps[j].version + ")"  
+                      + ">"
+        });
+        fields.push({
+          "type": "mrkdwn",
+          "text": " "
+        });
       }
+      block = block.concat([
+        {
+          "type": "section",
+          "fields": fields
+        }
+      ]);
     }
 
-    console.log(results[i].producingApps, results[i].consumingApps);
     block = block.concat({
       "type": "context",
       "elements": [
@@ -576,26 +919,61 @@ const buildEventVersionBlocks = (results, domain) => {
       }
     ]);
 
-    blocks.push(block);
+    if (i === results.length - 1 && getstr) {
+      block = block.concat([
+        {
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: getstr
+              },
+              action_id: "click_get_all",
+              value: JSON.stringify(next)
+            },
+          ]
+        },
+        {
+          type: "divider"
+        }
+      ]);
+    }
+
+    blocks = blocks.concat(block);
   }
 
   return blocks;
 }
 
-const buildSchemaBlocks = (results, domain, item) => {
+const buildSchemaBlocks = (results, domain, next=null) => {
   let blocks = [];
-  
+  let getstr = undefined;
+  let pageStart = 0;
+  if (next && next.options && next.cmd && next.cmd.scope !== 'id') {
+    if (next.options.pageSize === 1) {
+      next.options.pageNumber = 1;
+      next.options.pageSize = 5;
+      getstr = "Get all";
+    } else if (results.length === next.options.pageSize) {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+      next.options.pageNumber++;
+      getstr = "Get more"
+    } else {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+    }
+  }
+
   for (let i = 0; i < results.length; i++) {
     let block = [];
     block = block.concat([
       {
         type: "section",
         text: {
-          type: "mrkdwn",
-          text: "*Schema:* <https://" + domain + "/ep/designer/domains/" 
-                    + results[i].applicationDomainId  + "/schemas?selectedId=" + results[i].id 
-                    + "|" + results[i].name + ">"
-        },
+            type: "mrkdwn",
+            text: "*Schema [" + (pageStart+i+1) + "]:*"
+          },
         accessory: {
           "action_id": "block_actions",
           "type": "static_select",
@@ -614,14 +992,35 @@ const buildSchemaBlocks = (results, domain, item) => {
               "value": "getschemaversions|"+results[i].id+"|"+results[i].name+"|"+results[i].applicationDomainId+"|"+results[i].domainName
             }
           ]
-        }      
+        }     
       },
       {
         type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "*Domain:* <https://" + domain + "/ep/designer/domains?selectedDomainId=" + results[i].applicationDomainId + "|" + results[i].domainName + ">"
-        },
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Schema:*"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains/" 
+                  + results[i].applicationDomainId  + "/schemas?selectedId=" + results[i].id 
+                  + "|" + results[i].name + ">"
+          },
+        ],
+      },
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Domain:*"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains?selectedDomainId=" + results[i].applicationDomainId + "|" + results[i].domainName + ">"
+          },
+        ]
       },
     ]);
 
@@ -631,10 +1030,16 @@ const buildSchemaBlocks = (results, domain, item) => {
       block = block.concat([
         {
           type: "section",
-          text: {
-            type: "mrkdwn",
-            text: desc.join("\n")
-          },
+          fields: [
+            {
+              type: "mrkdwn",
+              text: "*Description:*"
+            },
+            {
+              type: "mrkdwn",
+              text: desc.join("\n")
+            },
+          ]
         }
       ]);
     }
@@ -669,17 +1074,179 @@ const buildSchemaBlocks = (results, domain, item) => {
       ]
     });    
 
-    if (item && item.selectedVersionId) {
-      block = block.concat({
-        "type": "context",
-        "elements": [
-          {
-            "type": "mrkdwn",
-            "text": "_Version:_ " + results[i].displayName + " (" + results[i].version + ")"
-          },      
-        ]
-      });
+    block = block.concat([
+      {
+        type: "divider"
+      }
+    ]);
+
+    if (i === results.length - 1 && getstr) {
+      block = block.concat([
+        {
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: getstr
+              },
+              action_id: "click_get_all",
+              value: JSON.stringify(next)
+            },
+          ]
+        },
+        {
+          type: "divider"
+        }
+      ]);
     }
+    blocks.push(block);
+  }
+
+  return blocks;
+}
+
+const buildSchemaVersionBlocks = (results, domain, next=null) => {
+  let blocks = [];
+  let getstr = undefined;
+  let pageStart = 0;
+  if (next && next.options && next.cmd && next.cmd.scope !== 'id') {
+    if (next.options.pageSize === 1) {
+      next.options.pageNumber = 1;
+      next.options.pageSize = 5;
+      getstr = "Get all";
+    } else if (results.length === next.options.pageSize) {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+      next.options.pageNumber++;
+      getstr = "Get more"
+    } else {
+      pageStart = (next.options.pageNumber - 1) * next.options.pageSize;
+    }
+  }
+
+  for (let i = 0; i < results.length; i++) {
+    let block = [];
+    if (results[i].schema) {
+      block = block.concat([
+        {
+          type: "section",
+          fields: [
+            {
+              type: "mrkdwn",
+              text: "*Schema:*"
+            },
+            {
+              type: "mrkdwn",
+              text: "<https://" + domain + "/ep/designer/domains/" 
+                      + results[i].applicationDomainId  + "/schemas/" + results[i].schemaId
+                      + "|" + results[i].schema.name + ">"
+            },
+          ]
+        },
+      ]);
+    }
+
+    block = block.concat([
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Schema Version [" + (pageStart+i+1) + "]:* "
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains/" 
+                    + results[i].applicationDomainId  + "/schemas/" + results[i].schemaId 
+                    + "?selectedVersionId=" + results[i].id
+                    + "|" + results[i].displayName + " (" + results[i].version + ")>"
+          }
+        ],
+      },
+    ]);
+
+    if (results[i].description) {
+      let desc = (results[i].description ? results[i].description.split(/\r?\n/) : "");
+      desc.forEach((line, index) => desc[index] = ((line && line.length > 0) ? "_" + line + "_" : ""));
+      block = block.concat([
+        {
+          type: "section",
+          fields: [
+            {
+              type: "mrkdwn",
+              text: "*Description:*"
+            },
+            {
+              type: "mrkdwn",
+              text: desc.join("\n")
+            },
+          ]
+        }
+      ]);
+    }
+
+    if (results[i].eventVersions && results[i].eventVersions.length) {
+      let fields = [{ 
+        "type": "mrkdwn", 
+        "text": "*Referencing Events*" 
+      }];
+      for (let j=0; j<results[i].eventVersions.length; j++) {
+        fields.push({
+            "type": "mrkdwn",
+            "text": "<https://" + domain + "/ep/designer/domains/" 
+                      + results[i].applicationDomainId  + "/events/"
+                      + "?domainName=" + results[i].domainName 
+                      + "&selectedId=" + results[i].eventVersions[j].eventId
+                      + "|" + results[i].eventVersions[j].event.name  + ">\n\n"
+                    + "    <https://" + domain + "/ep/designer/domains/" 
+                      + results[i].applicationDomainId  + "/events/" + results[i].eventVersions[j].eventId 
+                      + "?domainName=" + results[i].domainName 
+                      + "&selectedVersionId=" + results[i].eventVersions[j].id
+                      + "|" + results[i].eventVersions[j].displayName  
+                      + " (" + results[i].eventVersions[j].version + ")"  
+                      + ">"
+        });
+
+        fields.push({
+          "type": "mrkdwn",
+          "text": " "
+        });
+      }
+      block = block.concat([
+        {
+          "type": "section",
+          "fields": fields
+        }
+      ]);  
+    }
+
+
+    block = block.concat({
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "_State:_ " + states[results[i].stateId]
+        },      
+        {
+          "type": "mrkdwn",
+          "text": "_Shared:_ " + results[i].schema.shared
+        },      
+        {
+          "type": "mrkdwn",
+          "text": "_Content Type:_ " + results[i].schema.contentType
+        },      
+        {
+          "type": "mrkdwn",
+          "text": "_Schema Type:_ " + results[i].schema.schemaType
+        },      
+        {
+          "type": "mrkdwn",
+          "text": "_Referencing Events Count:_ " + (results[i].referencedByEventVersionIds ? results[i].referencedByEventVersionIds.length : 0)
+        },      
+      ]
+    });    
 
     block = block.concat([
       {
@@ -687,7 +1254,29 @@ const buildSchemaBlocks = (results, domain, item) => {
       }
     ]);
 
-    blocks.push(block);
+    if (i === results.length - 1 && getstr) {
+      block = block.concat([
+        {
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: getstr
+              },
+              action_id: "click_get_all",
+              value: JSON.stringify(next)
+            },
+          ]
+        },
+        {
+          type: "divider"
+        }
+      ]);
+    }
+
+    blocks = blocks.concat(block);
   }
 
   return blocks;
@@ -701,4 +1290,5 @@ module.exports = {
   buildEventBlocks,
   buildEventVersionBlocks,
   buildSchemaBlocks,
+  buildSchemaVersionBlocks
 };
