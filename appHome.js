@@ -4,13 +4,13 @@ const db = new JsonDB('tokens', true, false);
 const updateView = async(user) => {
   console.log('updateView');
 
-  let token = null;
-  
+  let solaceCloudToken = undefined;
   try {
-    token = db.getData(`/${user}/data`);
+    db.reload();
+    solaceCloudToken = db.getData(`/${user}/data`);
   } catch(error) {
-    // console.error(error); 
-  };
+    console.error(error); 
+  }
 
   let blocks = [ 
     {
@@ -41,8 +41,8 @@ const updateView = async(user) => {
         action_id: "add_token", 
         text: {
           type: "plain_text",
-          text: token ? "Update Token" : "Add Token",
-          emoji: true
+          text: solaceCloudToken ? "Update Token" : "Register Token",
+          emoji: true,
         }
       }
     },
@@ -51,13 +51,13 @@ const updateView = async(user) => {
     },
   ];
 
-  if (token) {
+  if (solaceCloudToken) {
     blocks = blocks.concat([
       {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: "*API Token*: " + token.token,
+          text: "*API Token*: " + solaceCloudToken.token,
         },
         accessory: {
           type: "image",
@@ -69,7 +69,7 @@ const updateView = async(user) => {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: "*Event Portal Domain*:\n" + token.domain,
+          text: "*Event Portal Domain*:\n" + solaceCloudToken.domain,
         },
       },      
       {
@@ -79,12 +79,28 @@ const updateView = async(user) => {
         type: "section",
         text: {
             type: "mrkdwn",
-            text: token.username + " (" + token.userid + ")\n" + token.timestamp
+            text: solaceCloudToken.username + " (" + solaceCloudToken.userid + ")\n" + solaceCloudToken.timestamp
         },
       },
       {
         type: "divider"
       },
+    ]);
+  } else {
+    blocks = blocks.concat([
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          text: ":boom: Hey there 👋 \n\n"
+                    + "I need you to register a valid API Token to access Solace Event Portal. "
+                    + "It just takes a second, and then you'll be all set. "
+                    + "Just click on `Register Token` button above."
+        }
+      },
+      {
+        type: "divider"
+      }
     ]);
   }
     
@@ -118,7 +134,7 @@ const createHome = async(user, data) => {
 
 /* Open a modal */
 
-const openModal = () => {
+const openModal = (token) => {
   console.log('openModal');
 
   const modal = {
@@ -130,7 +146,7 @@ const openModal = () => {
     },
     submit: {
       type: 'plain_text',
-      text: 'Register'
+      text: 'Register',
     },
     blocks: [
       {
@@ -138,7 +154,7 @@ const openModal = () => {
         "block_id": "token",
         "label": {
           type: "plain_text",
-          text: "Solace Cloud REST Token"
+          text: "Solace Cloud REST API Token"
         },
         "element": {
           "action_id": "content",
@@ -147,6 +163,7 @@ const openModal = () => {
             type: "plain_text",
             text: "API Token..."
           },
+          "initial_value": token ? token.token : "",
           "multiline": true
         }
       },
@@ -155,37 +172,20 @@ const openModal = () => {
         "block_id": "domain",
         "label": {
           "type": "plain_text",
-          "text": "Solace Event Portal Domain name",
+          "text": "Solace Event Portal URL Domain",
           "emoji": true
         },
         "element": {
-          "type": "static_select",
+          "type": "plain_text_input",
           "action_id": "content",
           "placeholder": {
             "type": "plain_text",
-            "text": "Choose the domain..",
-            "emoji": true
+            "text": "Enter a valid domain name..",
+            "emoji": true,
           },
-          "options": [
-            {
-              "text": {
-                "type": "plain_text",
-                "text": "solace-sso.solace.cloud",
-                "emoji": true
-              },
-              "value": "solace-sso.solace.cloud"
-            },
-            {
-              "text": {
-                "type": "plain_text",
-                "text": "console.solace.cloud",
-                "emoji": true
-              },
-              "value": "console.solace.cloud"
-            },
-          ]
+          "initial_value": token ? token.domain : "",
         }
-      },      
+      },
     ]
   };
   

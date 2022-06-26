@@ -2,44 +2,203 @@ const EventPortal = require('./epwrapper')
 const JsonDB = require('node-json-db').JsonDB;
 const db = new JsonDB('tokens', true, false);
 
-const { constructErrorUnfurl,
-        buildDomainBlocks,
-        buildApplicationBlocks,
-        buildEventBlocks,
-        buildSchemaBlocks,
-        buildEnumBlocks } = require('./buildBlocks');
+const {
+  getSolaceApplicationDomains,
+  getSolaceApplications,
+  getSolaceApplicationVersions,
+  getSolaceEvents,
+  getSolaceEventVersions,
+  getSolaceSchemas,
+  getSolaceSchemaVersions
 
+} = require('./solCommands')
+const {
+  buildDomainBlocks,
+  buildApplicationBlocks,
+  buildApplicationVersionBlocks,
+  buildEventBlocks,
+  buildEventVersionBlocks,
+  buildSchemaBlocks,
+  buildSchemaVersionBlocks
+} = require('./buildBlocks');
+
+const checkArrayOfArrays = (a) => {
+  return a.every(function(x){ return Array.isArray(x); });
+}
+
+const postLinkAccountMessage = async (channel, user, token) => {
+  const { app } = require('./app')
+  
+  try {
+    let blocks = [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: "*Discover, Visualize and Catalog Your Event Streams With PubSub+ Event Portal*\n\n\n"
+        },
+        accessory: {
+          type: "image",
+          image_url: `https://cdn.solace.com/wp-content/uploads/2019/02/snippets-psc-animation-new.gif`,
+          alt_text: "solace cloud"
+        }    
+      },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: "Hello! Before I can help, I need you to register a valid API Token to access Solace Event Portal. "
+                + "It just takes a second, and then you'll be all set. "
+                + "Just click on the link below."
+        },
+      },      
+      {
+        type: "actions",
+        elements: [
+          {
+            type: "button",
+            text: {
+              type: "plain_text",
+              text: "Register"
+            },
+            style: "primary",
+            action_id: "click_autorize"
+          },
+        ]
+      }
+    ]
+
+    await app.client.chat.postEphemeral({
+      token: token,
+      channel: channel,
+      user: user,
+      "blocks": blocks,
+      text: 'Message from Solace App'
+    });
+
+  } catch (error) {
+    console.log('postLinkAccountMessage failed');
+    console.log(error);
+  }
+}
+        
 const parseSolaceLink = (link) => {
-  let objects = ['domains', 'applications', 'events', 'schemas' ];
   let url = new URL(link.replaceAll('&amp;', '&'));
   if (!url.pathname.startsWith('/ep'))
     return false;
-  let item = {};
-  let splits = url.pathname.split('/ep/designer/');
-  if (splits.length <= 1 || (splits[0] === '' && splits[1] === '')) {
-      item = {
-        query: 'domains',
-        name: 'Domains'
-      }
-  } else {
-    let tokens = splits[1].split('/');
 
-    tokens.forEach((token, index) => {
-      if (objects.includes(token)) {
-        (index+1 < tokens.length) ? item[token] = tokens[index+1] : '';
-        item.query = token;
-        item.name = token.charAt(0).toUpperCase() + token.slice(1);
+  let cmd = {};
+  let vals = url.pathname.split('/');
+  for (let j=0; j<vals.length; j++) {
+    if (vals[j] === 'domains') {
+      cmd.resource = 'domain';            
+      if (!vals[j+1]) {
+        cmd.scope = 'all';
+      } else {
+        cmd.scope = 'id';
+        cmd.domainId = vals[j+1]
       }
-    })
+    }
+    if (vals[j] === 'applications' && vals[j+1]) {
+      cmd.resource = 'application';            
+      if (!vals[j+1]) {
+        cmd.scope = 'all';
+      } else {
+        cmd.scope = 'id';
+        cmd.applicationId = vals[j+1]
+      }
+    }
+    if (vals[j] === 'events' && vals[j+1]) {
+      cmd.resource = 'event';            
+      if (!vals[j+1]) {
+        cmd.scope = 'all';
+      } else {
+        cmd.scope = 'id';
+        cmd.eventId = vals[j+1]
+      }
+    }
+    if (vals[j] === 'schemas' && vals[j+1]) {
+      cmd.resource = 'schema';            
+      if (!vals[j+1]) {
+        cmd.scope = 'all';
+      } else {
+        cmd.scope = 'id';
+        cmd.schemaId = vals[j+1]
+      }
+    }
   }
 
-  for (const [key, value] of url.searchParams.entries()) {
-    item[key] = value;
-    if (key === 'selectedId')
-      item[item.query] = value;
+  if (url.pathname.indexOf('/domains/') > 0 || url.pathname.indexOf('/domains?') > 0 ||url.pathname.endsWith('/domains')) {
+    cmd.scope = 'all';
+    cmd.resource = 'domain';
+    if (url.searchParams.has('selectedDomainId')) {
+      cmd.scope = 'id';
+      cmd.resource = 'domain';
+      cmd.domainId = url.searchParams.get('selectedDomainId');
+    }
+    if (cmd.domainId) {
+      cmd.scope = 'id'
+    }
   }
 
-  return item;
+  if (url.pathname.indexOf('/applications/') > 0 || url.pathname.indexOf('/applications?') > 0 ||url.pathname.endsWith('/applications')) {
+    cmd.scope = 'all';
+    cmd.resource = 'application';
+    if (url.searchParams.has('selectedId')) {
+      cmd.scope = 'id';
+      cmd.resource = 'application';
+      cmd.applicationId = url.searchParams.get('selectedId');
+    }
+    if (url.searchParams.has('selectedVersionId')) {
+      cmd.scope = 'id';
+      cmd.resource = 'application';
+      cmd.versionId = url.searchParams.get('selectedVersionId');
+    }
+    if (cmd.applicationId) {
+      cmd.scope = 'id'
+    }
+  }
+  if (url.pathname.indexOf('/events/') > 0 || url.pathname.indexOf('/events?') > 0 ||url.pathname.endsWith('/events')) {
+    cmd.scope = 'all';
+    cmd.resource = 'event';
+    if (url.searchParams.has('selectedId')) {
+      cmd.scope = 'id';
+      cmd.resource = 'event';
+      cmd.eventId = url.searchParams.get('selectedId');
+    }
+    if (url.searchParams.has('selectedVersionId')) {
+      cmd.scope = 'id';
+      cmd.resource = 'event';
+      cmd.versionId = url.searchParams.get('selectedVersionId');
+    }
+    if (cmd.eventId) {
+      cmd.scope = 'id'
+    }
+  }
+
+  if (url.pathname.indexOf('/schemas/') > 0 || url.pathname.indexOf('/schemas?') > 0 ||url.pathname.endsWith('/schemas')) {
+    cmd.scope = 'all';
+    cmd.resource = 'schema';
+    if (url.searchParams.has('selectedId')) {
+      cmd.scope = 'id';
+      cmd.resource = 'schema';
+      cmd.schemaId = url.searchParams.get('selectedId');
+    }
+    if (url.searchParams.has('selectedVersionId')) {
+      cmd.scope = 'id';
+      cmd.resource = 'schema';
+      cmd.versionId = url.searchParams.get('selectedVersionId');
+    }
+    if (cmd.schemaId) {
+      cmd.scope = 'id'
+    }
+  }
+
+  for (const [key, value] of url.searchParams.entries())  
+    cmd[key] = value;
+
+  console.log('cmd:', cmd);
+  return cmd;
 }
 
 const appHomeOpenedEvent = async({event, context, payload}) => {
@@ -54,7 +213,7 @@ const appHomeOpenedEvent = async({event, context, payload}) => {
   
   try {
     const result = await app.client.views.publish({
-      token: context.botToken,
+      token: process.env.SLACK_BOT_TOKEN,
       user_id: event.user,
       view: homeView
     });
@@ -67,109 +226,169 @@ const appHomeOpenedEvent = async({event, context, payload}) => {
 const appLinkSharedEvent = async({event, context, payload}) => {
   console.log('bot:link_shared');
   const { app } = require('./app')
+
+  let resultBlock = [];
+  let errorBlock = null;
+
   for (var i=0; i<payload.links.length; i++) {
     try {
       let unfurledData = [];
-      let item = parseSolaceLink(payload.links[i].url);
-
-      let solaceCloudToken = null;
+      let cmd = parseSolaceLink(payload.links[i].url);
+      let solaceCloudToken = undefined;
       try {
+        db.reload();
         solaceCloudToken = db.getData(`/${payload.user}/data`);
       } catch(error) {
         console.error(error); 
+      }
+    
+      if (!solaceCloudToken) {
+        await postLinkAccountMessage(payload.channel, payload.user_id, process.env.SLACK_BOT_TOKEN);
         return;
-      };
+      }
       
-      let result = null;
+      const headerBlock = [
+        {
+          type: "divider"
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "*Discover, Visualize and Catalog Your Event Streams With PubSub+ Event Portal*\n\n"
+          },
+          accessory: {
+            type: "image",
+            image_url: `https://cdn.solace.com/wp-content/uploads/2019/02/snippets-psc-animation-new.gif`,
+            alt_text: "solace cloud"
+          }    
+        },
+        {
+          type: "divider"
+        }
+      ]
+    
       let results = [];
-      let blocks = [];
-      const ep = new EventPortal(solaceCloudToken.token);
-      if (item.query === 'domains') {
-        let params = new URLSearchParams({ include: 'stats' }).toString();
+      if (cmd.resource === 'domain') {
+        let options = { id: cmd.domainId, pageSize: 1, pageNumber: 1}
+        results = await getSolaceApplicationDomains(cmd.scope, solaceCloudToken, options)
+        if (!results.length)
+          resultBlock = emptyBlock;
+        else {
+          resultBlock = buildDomainBlocks(results, solaceCloudToken.domain, {cmd, options}); 
+          resultBlock[0] = headerBlock.concat(resultBlock[0]);
+        } 
 
-        result = item.selectedDomainId ?
-                    await ep.getApplicationDomainByID(item.selectedDomainId, item.selectedVersionId, params) :                    
-                    await ep.getApplicationDomains(params);
-        blocks = buildDomainBlocks(result, solaceCloudToken.domain);
-      } else if (item.query === 'applications') {
-        let domain = await ep.getApplicationDomainByID(item.domains);
-        let params = new URLSearchParams();
-        if (item.hasOwnProperty('selectedVersionId')) params.append('selectedVersionId', item.selectedVersionId);
-        if (item.hasOwnProperty('domains')) params.append('applicationDomainId', item.domains);
-        if (item.hasOwnProperty('domainName')) params.append('name', item.domainName);
-
-        if (item.hasOwnProperty('applications'))
-          result = await ep.getApplicationByID(item.applications, params);
-        else
-          result = await ep.getApplications(params);
-
-        results = results.concat(result);
-        blocks = buildApplicationBlocks(results, solaceCloudToken.domain, item);
-      } else if (item.query === 'events') {
-        let domain = await ep.getApplicationDomainByID(item.domains);
-        let events = await ep.getEvents();
-        if (!item.events) {
-          result = events.filter(el => el.applicationDomainId === item.domains);
-          result.map(el => el.domainName = domain.name);
+      } else if (cmd.resource === 'application') {
+        let options = { id: cmd.applicationId, domainId: cmd.domainId, domainName: cmd.domainName, 
+                        versionId: cmd.versionId, pageSize: 1, pageNumber: 1}
+        if (cmd.versionId) {
+          results = await getSolaceApplicationVersions(cmd.applicationId, solaceCloudToken, options)
+          if (!results.length)
+            resultBlock = emptyBlock;
+          else
+            resultBlock = buildApplicationVersionBlocks(results, solaceCloudToken.domain, {cmd, options});        
         } else {
-          let vEvent = await ep.getEventByID(item.events, item.selectedVersionId);
-          let found = events.find((el) => {
-            return el.id === vEvent.id;
-          })
-          vEvent.name = found.name;
-          vEvent.domainName = domain.name;
-          result = vEvent;
-        }
-        blocks = buildEventBlocks(result, solaceCloudToken.domain, item);        
-      } else if (item.query === 'schemas') {
-        let domain = await ep.getApplicationDomainByID(item.domains);
-        let schemas = await ep.getSchemas();
-        if (!item.schemas) {
-          result = schemas.filter(el => el.applicationDomainId === item.domains);
-          result.map(el => el.domainName = domain.name);
+          results = await getSolaceApplications(cmd.scope, solaceCloudToken, options)
+          if (!results.length)
+            resultBlock = emptyBlock;
+          else
+            resultBlock = buildApplicationBlocks(results, solaceCloudToken.domain, {cmd, options});        
+        }        
+      } 
+      else if (cmd.resource === 'event') {
+        let options = { id: cmd.eventId, domainId: cmd.domainId, domainName: cmd.domainName, 
+                        versionId: cmd.versionId, pageSize: 1, pageNumber: 1}
+        if (cmd.versionId) {
+          results = await getSolaceEventVersions(cmd.eventId, solaceCloudToken, options)
+          if (!results.length)
+            resultBlock = emptyBlock;
+          else
+            resultBlock = buildEventVersionBlocks(results, solaceCloudToken.domain, {cmd, options});        
         } else {
-          let vSchema = await ep.getSchemaByID(item.schemas, item.selectedVersionId);
-          let found = schemas.find((el) => {
-            return el.id === vSchema.schemaId;
-          })
-          vSchema.name = found.name;
-          vSchema.applicationDomainId = found.applicationDomainId;
-          vSchema.domainName = domain.name;
-          result = vSchema;
-        }
-        blocks = buildSchemaBlocks(result, solaceCloudToken.domain, item);        
+          results = await getSolaceEvents(cmd.scope, solaceCloudToken, options)
+          if (!results.length)
+            resultBlock = emptyBlock;
+          else
+            resultBlock = buildEventBlocks(results, solaceCloudToken.domain, {cmd, options});        
+        }        
+      } else if (cmd.resource === 'schema') {
+        let options = { id: cmd.schemaId, domainId: cmd.domainId, domainName: cmd.domainName, 
+                        versionId: cmd.versionId, pageSize: 1, pageNumber: 1}
+        if (cmd.versionId) {
+          results = await getSolaceSchemaVersions(cmd.schemaId, solaceCloudToken, options)
+          if (!results.length)
+            resultBlock = emptyBlock;
+          else
+            resultBlock = buildSchemaVersionBlocks(results, solaceCloudToken.domain, {cmd, options});        
+        } else {
+          results = await getSolaceSchemas(cmd.scope, solaceCloudToken, options)
+          if (!results.length)
+            resultBlock = emptyBlock;
+          else
+            resultBlock = buildSchemaBlocks(results, solaceCloudToken.domain, {cmd, options});        
+        }   
       }
-          
-      unfurledData.push({
-        url: payload.links[i].url,
-        query: item.query,
-        item,
-        result,
-        blocks
-      });
-
-      let unfurls = {};
-      unfurls[payload.links[i].url] = {
-        blocks
-      }
-      await app.client.chat.unfurl({
-        token: process.env.SLACK_BOT_TOKEN,
-        ts: event.message_ts,
-        channel: payload.channel,
-        unfurls: unfurls,
-        text: 'Unfurl successful'
-      });
     } catch (error) {
-      console.log(error);
-      let blocks = constructErrorUnfurl(error.data.error)
-      await app.client.chat.postMessage({
-        token: process.env.SLACK_BOT_TOKEN,
-        ts: event.message_ts,
-        channel: payload.channel,
-        blocks,
-        text: 'Unfurl error'
-      });
+      errorBlock = [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: error.message
+          },
+        },
+        {
+          type: "divider"
+        }
+      ]
     }
+
+    try {
+      if (errorBlock) 
+        await app.client.chat.postEphemeral({
+          token: process.env.SLACK_BOT_TOKEN,
+          channel: payload.channel,
+          user: payload.user,
+          blocks,
+          text: 'Unfurl error'
+        });
+      else {
+        if (checkArrayOfArrays(resultBlock)) {
+          for (let j=0; j<resultBlock.length; j++) {
+          
+            let unfurls = {};
+            unfurls[payload.links[i].url] = {
+              blocks: resultBlock[j]
+            }
+                  
+            await app.client.chat.unfurl({
+              token: process.env.SLACK_BOT_TOKEN,
+              ts: event.message_ts,
+              channel: payload.channel,
+              unfurls: JSON.stringify(unfurls),
+              text: 'Unfurl successful'
+            });
+          }
+        } else {          
+          let unfurls = {};
+          unfurls[payload.links[i].url] = {
+            blocks: resultBlock
+          }
+              
+          await app.client.chat.unfurl({
+            token: process.env.SLACK_BOT_TOKEN,
+            ts: event.message_ts,
+            channel: payload.channel,
+            unfurls: JSON.stringify(unfurls),
+            text: 'Unfurl successful'
+          });
+        }
+    
+      }
+    } catch (error) {
+      console.error(error);
+    }    
   }
 }
 
