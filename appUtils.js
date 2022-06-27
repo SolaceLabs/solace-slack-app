@@ -288,12 +288,44 @@ const showHelp = async(userId, channelId) => {
     {
       type: "divider"
     },
+
+    {
+      "type": "section",
+      text: {
+        type: "mrkdwn",
+        "text": "*App Registration*"
+      },
+    },
     {
       "type": "section",
       "fields": [
         { 
           "type": "mrkdwn", 
-          "text": "Search Event Portal resource" 
+          "text": "Register App" 
+        }, 
+        {
+          "type": "mrkdwn",
+          "text": "`/solace register`"
+        },
+      ]
+    },
+    {
+      type: "divider"
+    },    
+
+    {
+      "type": "section",
+      text: {
+        type: "mrkdwn",
+        "text": "*Miscellaneous*"
+      },
+    },
+    {
+      "type": "section",
+      "fields": [
+        { 
+          "type": "mrkdwn", 
+          "text": "Search resource" 
         }, 
         {
           "type": "mrkdwn",
@@ -306,11 +338,36 @@ const showHelp = async(userId, channelId) => {
     },    
     {
       "type": "section",
-      text: {
-        type: "mrkdwn",
-        "text": "*More*"
-      },
+      "fields": [
+        { 
+          "type": "mrkdwn", 
+          "text": "Show examples" 
+        }, 
+        {
+          "type": "mrkdwn",
+          "text": "`/solace examples`"
+        },
+      ]
     },
+    {
+      type: "divider"
+    },    
+    {
+      "type": "section",
+      "fields": [
+        { 
+          "type": "mrkdwn", 
+          "text": "Show help" 
+        }, 
+        {
+          "type": "mrkdwn",
+          "text": "`/solace help`"
+        },
+      ]
+    },
+    {
+      type: "divider"
+    },    
     {
       type: "actions",
       elements: [
