@@ -21,67 +21,11 @@ const {
   buildSchemaBlocks,
   buildSchemaVersionBlocks
 } = require('./buildBlocks');
+const {
+  postRegisterMessage,
+  checkArrayOfArrays
+} = require('./appUtils')
 
-const checkArrayOfArrays = (a) => {
-  return a.every(function(x){ return Array.isArray(x); });
-}
-
-const postLinkAccountMessage = async (channel, user, token) => {
-  const { app } = require('./app')
-  
-  try {
-    let blocks = [
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "*Discover, Visualize and Catalog Your Event Streams With PubSub+ Event Portal*\n\n\n"
-        },
-        accessory: {
-          type: "image",
-          image_url: `https://cdn.solace.com/wp-content/uploads/2019/02/snippets-psc-animation-new.gif`,
-          alt_text: "solace cloud"
-        }    
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "Hello! Before I can help, I need you to register a valid API Token to access Solace Event Portal. "
-                + "It just takes a second, and then you'll be all set. "
-                + "Just click on the link below."
-        },
-      },      
-      {
-        type: "actions",
-        elements: [
-          {
-            type: "button",
-            text: {
-              type: "plain_text",
-              text: "Register"
-            },
-            style: "primary",
-            action_id: "click_authorize"
-          },
-        ]
-      }
-    ]
-
-    await app.client.chat.postEphemeral({
-      token: token,
-      channel: channel,
-      user: user,
-      "blocks": blocks,
-      text: 'Message from Solace App'
-    });
-
-  } catch (error) {
-    console.log('postLinkAccountMessage failed');
-    console.log(error);
-  }
-}
-        
 const parseSolaceLink = (link) => {
   let url = new URL(link.replaceAll('&amp;', '&'));
   if (!url.pathname.startsWith('/ep'))
@@ -232,7 +176,6 @@ const appLinkSharedEvent = async({event, context, payload}) => {
 
   for (var i=0; i<payload.links.length; i++) {
     try {
-      let unfurledData = [];
       let cmd = parseSolaceLink(payload.links[i].url);
       let solaceCloudToken = undefined;
       try {
@@ -243,7 +186,7 @@ const appLinkSharedEvent = async({event, context, payload}) => {
       }
     
       if (!solaceCloudToken) {
-        await postLinkAccountMessage(payload.channel, payload.user_id, process.env.SLACK_BOT_TOKEN);
+        await postRegisterMessage(payload.channel, payload.user_id);
         return;
       }
       

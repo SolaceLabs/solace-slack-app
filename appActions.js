@@ -22,10 +22,12 @@ const {
   buildSchemaBlocks,
   buildSchemaVersionBlocks
 } = require('./buildBlocks');
-
-const checkArrayOfArrays = (a) => {
-  return a.every(function(x){ return Array.isArray(x); });
-}
+const {
+  postRegisterMessage,
+  checkArrayOfArrays,
+  showHelp,
+  showExamples
+} = require('./appUtils')
 
 const getMoreResources = async({ body, context, ack }) => {
   console.log('action:getMoreResources');
@@ -176,538 +178,23 @@ const getMoreResources = async({ body, context, ack }) => {
   }
 }
 
-const postLinkAccountMessage = async (channel, user, token) => {
-  const { app } = require('./app')
-  
-  try {
-    let blocks = [
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "*Discover, Visualize and Catalog Your Event Streams With PubSub+ Event Portal*\n\n\n"
-        },
-        accessory: {
-          type: "image",
-          image_url: `https://cdn.solace.com/wp-content/uploads/2019/02/snippets-psc-animation-new.gif`,
-          alt_text: "solace cloud"
-        }    
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "Hello! Before I can help, I need you to register a valid API Token to access Solace Event Portal. "
-                + "It just takes a second, and then you'll be all set. "
-                + "Just click on the link below."
-        },
-      },      
-      {
-        type: "actions",
-        elements: [
-          {
-            type: "button",
-            text: {
-              type: "plain_text",
-              text: "Register"
-            },
-            style: "primary",
-            action_id: "click_authorize"
-          },
-        ]
-      }
-    ]
+const showHelpAction = async({ body, context, ack }) => {
+  console.log('action:showHelpAction', body);
+  ack();
 
-    await app.client.chat.postEphemeral({
-      token: token,
-      channel: channel,
-      user: user,
-      "blocks": blocks,
-      text: 'Message from Solace App'
-    });
-
-  } catch (error) {
-    console.log('postLinkAccountMessage failed');
-    console.log(error);
-  }
+  await showHelp(body.user.id, body.channel.id);
 }
 
-const showHelp = async({ body, context, ack }) => {
-  console.log('action:showHelp', body);
-  const { app } = require('./app')
-
+const showExamplesAction = async({ body, context, ack }) => {
+  console.log('action:showExamplesAction');
   ack();
-  let blocks = [
-    {
-      type: "divider"
-    },
-    {
-      "type": "section",
-      text: {
-        type: "mrkdwn",
-        "text": "*Application Domains*"
-      },
-    },
-    {
-      "type": "section",
-      "fields": [
-        { 
-          "type": "mrkdwn", 
-          "text": "Get application domains " 
-        }, 
-        {
-          "type": "mrkdwn",
-          "text": "`/solace domain`"
-        },
-        { 
-          "type": "mrkdwn", 
-          "text": "Get application domain by name " 
-        }, 
-        {
-          "type": "mrkdwn",
-          "text": '`/solace domain name:\"domain name\"`'
-        },
-      ]
-    },
-    {
-      type: "actions",
-      elements: [
-        {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: "Examples"
-          },
-          action_id: "click_examples_domains"
-        },
-      ]
-    },        
-    {
-      type: "divider"
-    },
-    {
-      "type": "section",
-      text: {
-        type: "mrkdwn",
-        "text": "*Applications*"
-      },
-    },
-    {
-      "type": "section",
-      "fields": [
-        { 
-          "type": "mrkdwn", 
-          "text": "Get applications " 
-        }, 
-        {
-          "type": "mrkdwn",
-          "text": "`/solace application [domain:\"domain name\"] [sort:ASC|DESC]`"
-        },
-        { 
-          "type": "mrkdwn", 
-          "text": "Get application by name " 
-        }, 
-        {
-          "type": "mrkdwn",
-          "text": '`/solace application name:\"application name\" [domain:\"domain name\"] `'
-        },
-      ]
-    },
-    {
-      type: "actions",
-      elements: [
-        {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: "Examples"
-          },
-          action_id: "click_examples_applications"
-        },
-      ]
-    },        
-    {
-      type: "divider"
-    },
-    {
-      "type": "section",
-      text: {
-        type: "mrkdwn",
-        "text": "*Events*"
-      },
-    },
-    {
-      "type": "section",
-      "fields": [
-        { 
-          "type": "mrkdwn", 
-          "text": "Get events " 
-        }, 
-        {
-          "type": "mrkdwn",
-          "text": "`/solace event [domain:\"domain name\"] [shared:true|false] [sort:ASC|DESC]`"
-        },
-        { 
-          "type": "mrkdwn", 
-          "text": "Get event by name " 
-        }, 
-        {
-          "type": "mrkdwn",
-          "text": '`/solace event name:\"event name\"`'
-        },
-      ]
-    },
-    {
-      type: "actions",
-      elements: [
-        {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: "Examples"
-          },
-          action_id: "click_examples_events"
-        },
-      ]
-    },        
-    {
-      type: "divider"
-    },
-    {
-      "type": "section",
-      text: {
-        type: "mrkdwn",
-        "text": "*Schemas*"
-      },
-    },
-    {
-      "type": "section",
-      "fields": [
-        { 
-          "type": "mrkdwn", 
-          "text": "Get schemas " 
-        }, 
-        {
-          "type": "mrkdwn",
-          "text": "`/solace schema [domain:\"domain name\"] [shared:true|false] [sort:ASC|DESC]`"
-        },
-        { 
-          "type": "mrkdwn", 
-          "text": "Get schema by name " 
-        }, 
-        {
-          "type": "mrkdwn",
-          "text": '`/solace schema name:\"schema name\"`'
-        },
-      ]
-    },
-    {
-      type: "actions",
-      elements: [
-        {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: "Examples"
-          },
-          action_id: "click_examples_schemas"
-        },
-      ]
-    },        
-    {
-      type: "divider"
-    },
-    {
-      "type": "section",
-      "fields": [
-        { 
-          "type": "mrkdwn", 
-          "text": "Search Event Portal resource" 
-        }, 
-        {
-          "type": "mrkdwn",
-          "text": "`/solace search`"
-        },
-      ]
-    },
-    {
-      type: "divider"
-    },    
-    {
-      "type": "section",
-      text: {
-        type: "mrkdwn",
-        "text": "*More*"
-      },
-    },
-    {
-      type: "actions",
-      elements: [
-        {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: ":book: Documentation",
-          },
-          url: "https://github.com/gvensan/solace-slackapp"
-        },
-        {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: ":thought_balloon: Feedback"
-          },
-          url: "https://github.com/gvensan/solace-slackapp/issues/new"
-        },
-      ]
-    },
-    {
-      type: "divider"
-    },        
-  ];
 
-  try {
-    await app.client.chat.postEphemeral({
-      token: process.env.SLACK_BOT_TOKEN,
-      channel: body.channel.id,
-      user: body.user.id,
-      blocks,
-      // Text in the notification
-      text: 'Message from Solace App'
-    });
-  } catch (error) {
-    console.error(error);
-  }
-
-  return;
-}
-
-const showExamples = async({ body, context, ack }) => {
-  console.log('action:showHelp', body);
-  const { app } = require('./app')
-
-  ack();
-  let blocks = [];
-  if (body.actions[0].action_id === 'click_examples_domains') {
-    blocks.push(
-      {
-        type: "divider"
-      },
-      {
-        "type": "section",
-        text: {
-          type: "mrkdwn",
-          "text": "*Application Domains*"
-        },
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn", 
-          "text": "`/solace domain`\n"
-                  + "Get all application domains" 
-        }, 
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn",
-          "text": '`/solace domain name:\"EP-Integration\"`\n'
-                  + "Get application domain by name \"EP-Integration\" " 
-
-        },
-      },
-      {
-        type: "divider"
-      });
-  } else if (body.actions[0].action_id === 'click_examples_applications') {
-    blocks.push(
-      {
-        type: "divider"
-      },
-      {
-        "type": "section",
-        text: {
-          type: "mrkdwn",
-          "text": "*Applications*"
-        },
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn", 
-          "text": "`/solace application`\n"
-                  + "Get all applications" 
-        }, 
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn", 
-          "text": "`/solace application sort:ASC`\n"
-                  + "Get all applications sorted by ascending order of application name" 
-        }, 
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn", 
-          "text": "`/solace application domain:\"EP-Integration\"`\n"
-                  + "Get all applications in domain \"EP-Integration\"" 
-        }, 
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn",
-          "text": '`/solace application name:\"EP-Integration-App\"`\n'
-                  + "Get application by name \"EP-Integration-App\" " 
-
-        },
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn",
-          "text": '`/solace application name:\"EP-Integration-App\" domain:"EP-Integration"`\n'
-                  + "Get application by name \"EP-Integration-App\" in domain \"EP-Integraion\" " 
-
-        },
-      },
-      {
-        type: "divider"
-      });
-  } else if (body.actions[0].action_id === 'click_examples_events') {
-    blocks.push(
-      {
-        type: "divider"
-      },
-      {
-        "type": "section",
-        text: {
-          type: "mrkdwn",
-          "text": "*Events*"
-        },
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn", 
-          "text": "`/solace event`\n"
-                  + "Get all events" 
-        }, 
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn", 
-          "text": "`/solace event shared:true`\n"
-                  + "Get all shared events" 
-        }, 
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn", 
-          "text": "`/solace event sort:ASC`\n"
-                  + "Get all events sorted by ascending order of event name" 
-        }, 
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn", 
-          "text": "`/solace event domain:\"EP-Integration\"`\n"
-                  + "Get all events in domain \"EP-Integration\"" 
-        }, 
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn",
-          "text": '`/solace event name:\"EP-Integration-Event\"`\n'
-                  + "Get event by name \"EP-Integration-Event\" " 
-
-        },
-      },
-      {
-        type: "divider"
-      });
-  } else if (body.actions[0].action_id === 'click_examples_schemas') {
-    blocks.push(
-      {
-        type: "divider"
-      },
-      {
-        "type": "section",
-        text: {
-          type: "mrkdwn",
-          "text": "*Schemas*"
-        },
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn", 
-          "text": "`/solace schema`\n"
-                  + "Get all schemas" 
-        }, 
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn", 
-          "text": "`/solace schema shared:true`\n"
-                  + "Get all shared schemas" 
-        }, 
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn", 
-          "text": "`/solace schema sort:ASC`\n"
-                  + "Get all schemas sorted by ascending order of schema name" 
-        }, 
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn", 
-          "text": "`/solace schema domain:\"EP-Integration\"`\n"
-                  + "Get all schemas in domain \"EP-Integration\"" 
-        }, 
-      },
-      {
-        "type": "section",
-        text: {
-          "type": "mrkdwn",
-          "text": '`/solace schema name:\"EP-Integration-Schemas\"`\n'
-                  + "Get schema by name \"EP-Integration-Schema\" " 
-
-        },
-      },
-      {
-        type: "divider"
-      });
-  }
-
-  try {
-    await app.client.chat.postEphemeral({
-      token: process.env.SLACK_BOT_TOKEN,
-      channel: body.channel.id,
-      user: body.user.id,
-      blocks,
-      // Text in the notification
-      text: 'Message from Solace App'
-    });
-  } catch (error) {
-    console.error(error);
-  }
+  await showExamples(body.user.id, body.channel.id, body.actions[0].action_id);
 }
 
 const authorizeEPTokenAction = async({ body, context, ack }) => {
   console.log('action:authorizeEPTokenAction', body);
-  const { app } = require('./app')
+  const { app, cache } = require('./app')
 
   ack();
   
@@ -719,6 +206,8 @@ const authorizeEPTokenAction = async({ body, context, ack }) => {
   } catch(error) {
     // ignore
   }
+
+  cache.set('channelId', body.channel.id, 60);
 
   const view = appHome.openModal(solaceCloudToken);
   
@@ -758,7 +247,7 @@ const blockActions = async({ ack, body, respond }) => {
   }
 
   if (!solaceCloudToken) {
-    await postLinkAccountMessage(body.channel.id, body.user.id, process.env.SLACK_BOT_TOKEN);
+    await postRegisterMessage(body.channel.id, body.user.id);
     return;
   }
 
@@ -1015,7 +504,7 @@ module.exports = {
   blockActions,
   authorizeEPTokenAction,
   modifyEPTokenAction,
-  showHelp,
-  showExamples,
+  showHelpAction,
+  showExamplesAction,
   getMoreResources
 };

@@ -14,6 +14,7 @@
     "@slack/bolt": "^3.3.0",
     "@solace-community/eventportal": "^1.1.0",
     "axios": "^0.27.2",
+    "node-cache": "^5.1.2",
     "node-json-db": "^1.5.0",
     "nodemon": "^2.0.16"
   },

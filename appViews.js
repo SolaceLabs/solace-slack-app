@@ -5,7 +5,7 @@ const modalView = async ({ ack, body, context, view }) => {
   console.log('view:modalView');
   ack();
 
-  const { app } = require('./app')
+  const { app, cache } = require('./app')
   const appHome = require('./appHome');
   const ts = new Date();
   
@@ -29,6 +29,32 @@ const modalView = async ({ ack, body, context, view }) => {
   const homeView = await appHome.createHome(body.user.id, data);
 
   try {
+    let channelId = cache.get('channelId');
+    if (channelId) {
+      await app.client.chat.postEphemeral({
+        token: process.env.SLACK_BOT_TOKEN,
+        user: body.user.id,
+        channel: channelId,
+        "blocks": [
+          {
+            type: "divider"
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: ":thumbsup: *Registration successful!*\n\n"
+            },
+          },
+          {
+            type: "divider"
+          },
+        ],
+        // Text in the notification
+        text: 'Message from Solace App'
+      });
+    }
+    
     await app.client.apiCall('views.publish', {
       token: process.env.SLACK_BOT_TOKEN,
       user_id: body.user.id,

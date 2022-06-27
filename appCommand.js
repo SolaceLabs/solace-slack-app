@@ -13,86 +13,18 @@ const {
   buildEventBlocks,
   buildSchemaBlocks,
 } = require('./buildBlocks');
+const {
+  postRegisterMessage,
+  postAlreadyRegisteredMessage,
+  checkArrayOfArrays,
+  stripQuotes,
+} = require('./appUtils');
+const { showHelp, showExamples } = require('./appUtils');
 
-const quotes = ['\'', '"', '`', '’', '‘', "“", "”"];
-const resources = ['domain', 'application', 'event', 'schema']
+const resources = ['domain', 'application', 'event', 'schema', 'register', 'help', 'examples']
 const needArgs = ['name', 'domain', 'shared', 'sort'];
 const sharedArgs = ['true', 'false', 'TRUE', 'FALSE'];
 const sortArgs = ['asc', 'desc', 'ASC', 'DESC'];
-
-const stripQuotes = (str) => {
-  let begin = 0, end = str.length;
-  if (quotes.includes(str.charAt(0)))
-    begin = 1;
-  if (quotes.includes(str.charAt(str.length-1)))
-    end = str.length-1;
-
-  return str.substring(begin, end);
-}
-
-const checkArrayOfArrays = (a) => {
-  return a.every(function(x){ return Array.isArray(x); });
-}
-
-const postLinkAccountMessage = async (channel, user, token) => {
-  const { app } = require('./app')
-  
-  try {
-    let blocks = [
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "*Discover, Visualize and Catalog Your Event Streams With PubSub+ Event Portal*\n\n\n"
-        },
-        accessory: {
-          type: "image",
-          image_url: `https://cdn.solace.com/wp-content/uploads/2019/02/snippets-psc-animation-new.gif`,
-          alt_text: "solace cloud"
-        }    
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: ":boom: Hey there 👋 I'm SolaceBot. \n\nCould not process your request yet, sorry about that!\n\n"
-                + "I need you to register a valid API Token to access Solace Event Portal.\n"
-                + "It just takes a second, and then you'll be all set. "
-                + "Just click on the link below."
-        },
-      },      
-      {
-        type: "actions",
-        elements: [
-          {
-            type: "button",
-            text: {
-              type: "plain_text",
-              text: "Register"
-            },
-            style: "primary",
-            action_id: "click_authorize"
-          },
-        ]
-      },
-      {
-        type: "divider"
-      },
-    ]
-
-    await app.client.chat.postEphemeral({
-      token: token,
-      channel: channel,
-      user: user,
-      "blocks": blocks,
-      text: 'Message from Solace App'
-    });
-
-  } catch (error) {
-    console.log('postLinkAccountMessage failed');
-    console.log(error);
-  }
-}
 
 const echoSlashCommand = async({command, ack, respond}) => {  
   console.log('command:echoSlashCommand');
@@ -173,12 +105,14 @@ const isValidSolaceCommand = async (command, solaceCloudToken) => {
       cmd['name'] = stripQuotes(nextArg);
     } else if (subArgs[0] === 'domain') {
       cmd['domain'] = nextArg;
-      cmd['domainId'] =  await getApplicationDomainId(cmd.domain, solaceCloudToken);
-      if (!cmd['domainId']) {
-        cmd.error = "Unknown domain `" + cmd.domain + '`';
-        cmd.valid = false;
-        console.log(cmd.error);
-        return cmd;
+      if (solaceCloudToken) {
+        cmd['domainId'] =  await getApplicationDomainId(cmd.domain, solaceCloudToken);
+        if (!cmd['domainId']) {
+          cmd.error = "Unknown domain `" + cmd.domain + '`';
+          cmd.valid = false;
+          console.log(cmd.error);
+          return cmd;
+        }
       }
     } else if (subArgs[0] === 'shared') {
       if (!sharedArgs.includes(nextArg)) {
@@ -256,9 +190,10 @@ const solaceSlashCommand = async({ack, payload, context}) => {
     console.error(error); 
   }
 
+
   if (!solaceCloudToken) {
-    await postLinkAccountMessage(payload.channel_id, payload.user_id, process.env.SLACK_BOT_TOKEN);
-    return;
+    await postRegisterMessage(payload.channel_id, payload.user_id);
+    return;  
   }
 
   let cmd = await isValidSolaceCommand(payload.text, solaceCloudToken);
@@ -313,6 +248,31 @@ const solaceSlashCommand = async({ack, payload, context}) => {
     }
     return;
   } 
+
+  if (cmd.resource === 'help') {
+    console.log('command:showHelpCommand');
+    await showHelp(payload.user_id, payload.channel_id);
+    return;
+  }
+  if (cmd.resource === 'examples') {
+    console.log('command:showExamplesCommand');
+    await showExamples(payload.user_id, payload.channel_id);
+    return;
+  }
+  if (cmd.resource === 'register') {
+    if (solaceCloudToken) {
+      await postAlreadyRegisteredMessage(payload.channel_id, payload.user_id);
+      return;  
+    }
+    console.log('command:showExamplesCommand');
+    await showExamples(payload.user_id, payload.channel_id);
+    return;
+  }
+
+  if (!solaceCloudToken) {
+    await postRegisterMessage(payload.channel_id, payload.user_id);
+    return;
+  }
 
   const headerBlock = [
     {
