@@ -212,7 +212,7 @@ const postLinkAccountMessage = async (channel, user, token) => {
               text: "Register"
             },
             style: "primary",
-            action_id: "click_autorize"
+            action_id: "click_authorize"
           },
         ]
       }
@@ -447,9 +447,9 @@ const showHelp = async({ body, context, ack }) => {
           type: "button",
           text: {
             type: "plain_text",
-            text: ":book: Documentation"
+            text: ":book: Documentation",
           },
-          action_id: "click_show_documentation"
+          url: "https://github.com/gvensan/solace-slackapp"
         },
         {
           type: "button",
@@ -457,7 +457,7 @@ const showHelp = async({ body, context, ack }) => {
             type: "plain_text",
             text: ":thought_balloon: Feedback"
           },
-          action_id: "click_collect_feedback"
+          url: "https://github.com/gvensan/solace-slackapp/issues/new"
         },
       ]
     },
@@ -706,7 +706,7 @@ const showExamples = async({ body, context, ack }) => {
 }
 
 const authorizeEPTokenAction = async({ body, context, ack }) => {
-  console.log('action:authorizeEPTokenAction');
+  console.log('action:authorizeEPTokenAction', body);
   const { app } = require('./app')
 
   ack();
@@ -723,14 +723,14 @@ const authorizeEPTokenAction = async({ body, context, ack }) => {
   const view = appHome.openModal(solaceCloudToken);
   
   try {
-    const result = await app.client.views.open({
+    await app.client.views.open({
       token: process.env.SLACK_BOT_TOKEN,
       trigger_id: body.trigger_id,
       view: view
     });    
   } catch(error) {
     console.log(error);
-    app.error(e);
+    app.error(error);
   }  
 }
 

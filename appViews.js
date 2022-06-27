@@ -26,18 +26,17 @@ const modalView = async ({ ack, body, context, view }) => {
     // ignore
   }
 
-
   const homeView = await appHome.createHome(body.user.id, data);
 
   try {
-    const result = await app.client.apiCall('views.publish', {
+    await app.client.apiCall('views.publish', {
       token: process.env.SLACK_BOT_TOKEN,
       user_id: body.user.id,
       view: homeView
     });
 
   } catch(e) {
-    logError(e);
+    console.log(e);
     app.error(e);
   }
     

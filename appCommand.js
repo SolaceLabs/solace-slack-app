@@ -71,7 +71,7 @@ const postLinkAccountMessage = async (channel, user, token) => {
               text: "Register"
             },
             style: "primary",
-            action_id: "click_autorize"
+            action_id: "click_authorize"
           },
         ]
       },
@@ -207,6 +207,40 @@ const isValidSolaceCommand = async (command, solaceCloudToken) => {
   console.log('CMD: ', cmd);
   return cmd;
 }
+
+const alreadyRegistered = [
+  {
+    type: "divider"
+  },
+  {
+    type: "section",
+    text: {
+      type: "mrkdwn",
+      text: ":wave: *Yay, you have already registered wih Solace PubSub+ Event Portal, you are all set!*\n\n"
+    },
+    accessory: {
+      type: "image",
+      image_url: `https://cdn.solace.com/wp-content/uploads/2019/02/snippets-psc-animation-new.gif`,
+      alt_text: "solace cloud"
+    }    
+  },
+  {
+    type: "actions",
+    elements: [
+      {
+        type: "button",
+        text: {
+          type: "plain_text",
+          text: "Show help"
+        },
+        action_id: "click_show_help"
+      },
+    ]
+  },
+  {
+    type: "divider"
+  },  
+];
 
 const solaceSlashCommand = async({ack, payload, context}) => {  
   console.log('command:solaceSlashCommand');

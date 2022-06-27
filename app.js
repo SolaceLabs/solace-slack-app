@@ -25,7 +25,7 @@ app.event('link_shared', appLinkSharedEvent);
 app.message('hello', helloMessage);
 
 app.action('block_actions', blockActions);
-app.action('click_autorize', authorizeEPTokenAction);
+app.action('click_authorize', authorizeEPTokenAction);
 app.action('click_show_help', showHelp);
 app.action('click_get_all', getMoreResources);
 app.action('click_get_more', getMoreResources);

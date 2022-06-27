@@ -62,7 +62,7 @@ const postLinkAccountMessage = async (channel, user, token) => {
               text: "Register"
             },
             style: "primary",
-            action_id: "click_autorize"
+            action_id: "click_authorize"
           },
         ]
       }
