@@ -59,11 +59,6 @@ const updateView = async(user) => {
           type: "mrkdwn",
           text: "*API Token*: " + solaceCloudToken.token,
         },
-        accessory: {
-          type: "image",
-          image_url: `https://cdn.solace.com/wp-content/uploads/2019/02/snippets-psc-animation-new.gif`,
-          alt_text: "solace cloud"
-        }
       },      
       {
         type: "section",
@@ -93,9 +88,10 @@ const updateView = async(user) => {
         "text": {
           "type": "mrkdwn",
           text: ":boom: Hey there 👋 \n\n"
-                    + "I need you to register a valid API Token to access Solace Event Portal. "
-                    + "It just takes a second, and then you'll be all set. "
-                    + "Just click on `Register Token` button above."
+                    + "I need you to register a valid API token to access Solace Event Portal. "
+                    + "Follow the link to create a API token in the <https://solace-sso.solace.cloud/api-tokens/create|*Event Portal*>. "
+                    + "It just takes a minute, and then you'll be all set. "
+                    + "\nJust click on `Register Token` button above and update the token and domain details."
         }
       },
       {

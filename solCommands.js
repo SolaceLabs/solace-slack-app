@@ -11,13 +11,13 @@ const getSolaceApplicationDomains = async (mode, solaceCloudToken, options=null)
   if (options.hasOwnProperty('sort')) params.append('sort', 'name:'+options.sort);
   if (options.hasOwnProperty('pageSize')) params.append('pageSize', options.pageSize);
   if (options.hasOwnProperty('pageNumber')) params.append('pageNumber', options.pageNumber);
-  if (mode === 'all' || mode === 'name') {
-    let result = await ep.getApplicationDomains(params);
-    results = results.concat(result);
-  } else if (mode === 'id') {
-    let result = await ep.getApplicationDomainByID(options.id, params);
-    results = results.concat(result);
-  }
+  
+  let response = undefined;
+  if (mode === 'all' || mode === 'name')
+    response = await ep.getApplicationDomains(params);
+  else if (mode === 'id')
+    response = await ep.getApplicationDomainByID(options.id, params);
+  results = {data: results.concat(response.data), meta: response.meta};
 
   return results;
 }
@@ -34,19 +34,19 @@ const getSolaceApplications = async (mode, solaceCloudToken, options=null) => {
   if (options.hasOwnProperty('pageSize')) params.append('pageSize', options.pageSize);
   if (options.hasOwnProperty('pageNumber')) params.append('pageNumber', options.pageNumber);
 
-  if (mode === 'all' || mode === 'name') {
-    let result = await ep.getApplications(params);
-    results = results.concat(result);
-  } else if (mode === 'id') {
-    let result = await ep.getApplicationByID(options.id, params);
-    results = results.concat(result);
-  }
+  let response = undefined;
+  if (mode === 'all' || mode === 'name')
+    response = await ep.getApplications(params);
+  else if (mode === 'id')
+    response = await ep.getApplicationByID(options.id, params);
+  results = {data: results.concat(response.data), meta: response.meta};
 
   let domains = {};
-  for (let i=0; i<results.length; i++) {
-    if (!domains[results[i].applicationDomainId])
-      domains[results[i].applicationDomainId] = await ep.getApplicationDomainName(results[i].applicationDomainId);
-    results[i].domainName = domains[results[i].applicationDomainId];
+  for (let i=0; i<results.data.length; i++) {
+    if (!domains[results.data[i].applicationDomainId])
+      domains[results.data[i].applicationDomainId] = await ep.getApplicationDomainName(results.data[i].applicationDomainId);
+    results.data[i].domainId = results.data[i].applicationDomainId;
+    results.data[i].domainName = domains[results.data[i].applicationDomainId];
   }
 
   return results;
@@ -65,150 +65,226 @@ const getSolaceApplicationVersions = async (applicationId, solaceCloudToken, opt
   if (options.hasOwnProperty('sort')) params.append('sort', 'name:'+options.sort);
   if (options.hasOwnProperty('pageSize')) params.append('pageSize', options.pageSize);
   if (options.hasOwnProperty('pageNumber')) params.append('pageNumber', options.pageNumber);
-  if (options.hasOwnProperty('versionId'))
-    result = await ep.getApplicationVersionByID(options.versionId, params);
-  else
-    result = await ep.getApplicationVersions(applicationId, params);
-  results = results.concat(result);
 
-  let application = results.length > 0 ? await ep.getApplicationByID(results[0].applicationId) : undefined;
-  for (let i=0; i<results.length; i++) {
-    results[i].applicationDomainId = options?.domainId;
-    results[i].domainName = options?.domainName;
-    results[i].application = application;
-  }  
+  let response = undefined;
+  if (!options.hasOwnProperty('versionId'))
+    response = await ep.getApplicationVersions(applicationId, params);
+  else if (mode === 'id')
+    response = await ep.getApplicationVersionByID(options.versionId, params);
+  results = {data: results.concat(response.data), meta: response.meta};
 
-  let events = {};
-  for (let i=0; i<results.length; i++) {
-    results[i].producedEvents = [];
-    results[i].producedEvents.length = results[i].declaredProducedEventVersionIds.length
-    results[i].consumedEvents = [];
-    results[i].consumedEvents.length = results[i].declaredConsumedEventVersionIds.length
-    
-    for (let j=0; j<results[i].declaredProducedEventVersionIds.length; j++) {
-      if (!events[results[i].declaredProducedEventVersionIds[j]]) {
-        let eventVersion = await ep.getEventVersionByID(results[i].declaredProducedEventVersionIds[j]);
-        events[results[i].declaredProducedEventVersionIds[j]] = await ep.getEventByID(eventVersion.eventId);
+  let domain = undefined;
+  let application = undefined;
+  if (results.data.length > 0) {
+    response = await ep.getApplicationByID(applicationId);
+    application = response.data;
+    response = await ep.getApplicationDomainByID(application.applicationDomainId);
+    domain = response.data;
+  }
+
+  for (let i=0; i<results.data.length; i++) {
+    results.data[i].domainId = domain.id;
+    results.data[i].domainName = domain.name;
+    results.data[i].application = application;
+  }
+
+  let allEvents = {};
+  let allEventVersions = {};
+  for (let i=0; i<results.data.length; i++) {
+    let events = {};
+    let eventVersions = {};
+    for (let j=0; j<results.data[i].declaredProducedEventVersionIds.length; j++) {
+      if (!allEvents[results.data[i].declaredProducedEventVersionIds[j]]) {
+        if (!allEventVersions[results.data[i].declaredProducedEventVersionIds[j]]) {
+          response = await ep.getEventVersionByID(results.data[i].declaredProducedEventVersionIds[j]);
+          allEventVersions[results.data[i].declaredProducedEventVersionIds[j]] = response.data;
+        }
+        if (!allEvents[results.data[i].declaredProducedEventVersionIds[j]]) {
+          response = await ep.getEventByID(allEventVersions[results.data[i].declaredProducedEventVersionIds[j]].eventId);
+          allEvents[results.data[i].declaredProducedEventVersionIds[j]] = response.data;
+        }
       }
 
-      results[i].producedEvents[j] = events[results[i].declaredProducedEventVersionIds[j]];
+      if (!eventVersions[results.data[i].declaredProducedEventVersionIds[j]])
+        eventVersions[results.data[i].declaredProducedEventVersionIds[j]] = allEventVersions[results.data[i].declaredProducedEventVersionIds[j]]
+      if (!events[results.data[i].declaredProducedEventVersionIds[j]])
+        events[results.data[i].declaredProducedEventVersionIds[j]] = allEvents[results.data[i].declaredProducedEventVersionIds[j]]
+
     }
-    for (let j=0; j<results[i].declaredConsumedEventVersionIds.length; j++) {
-      if (!events[results[i].declaredConsumedEventVersionIds[j]]) {
-        let eventVersion = await ep.getEventVersionByID(results[i].declaredConsumedEventVersionIds[j]);
-        events[results[i].declaredConsumedEventVersionIds[j]] = await ep.getEventByID(eventVersion.eventId);
+    for (let j=0; j<results.data[i].declaredConsumedEventVersionIds.length; j++) {
+      if (!allEvents[results.data[i].declaredConsumedEventVersionIds[j]]) {
+        if (!allEventVersions[results.data[i].declaredConsumedEventVersionIds[j]]) {
+          response = await ep.getEventVersionByID(results.data[i].declaredConsumedEventVersionIds[j]);
+          allEventVersions[results.data[i].declaredConsumedEventVersionIds[j]] = response.data;
+        }
+        if (!allEvents[results.data[i].declaredConsumedEventVersionIds[j]]) {
+          response = await ep.getEventByID(allEventVersions[results.data[i].declaredConsumedEventVersionIds[j]].eventId);;
+          allEvents[results.data[i].declaredConsumedEventVersionIds[j]] = response.data;
+        }
       }
-      results[i].consumedEvents[j] = events[results[i].declaredConsumedEventVersionIds[j]];
+
+      if (!eventVersions[results.data[i].declaredConsumedEventVersionIds[j]])
+        eventVersions[results.data[i].declaredConsumedEventVersionIds[j]] = allEventVersions[results.data[i].declaredConsumedEventVersionIds[j]]
+      if (!events[results.data[i].declaredConsumedEventVersionIds[j]])
+        events[results.data[i].declaredConsumedEventVersionIds[j]] = allEvents[results.data[i].declaredConsumedEventVersionIds[j]]
+
     }
+    results.data[i].events = events;
+    results.data[i].eventVersions = eventVersions;
   }
   return results;
 }
 
+// const getSolaceApplicationEvents = async (applicationId, solaceCloudToken, options=null) => {
+//   let results = [];
+//   let params = new URLSearchParams();
+//   const ep = new EventPortal(solaceCloudToken.token);
+
+//   // params.append('id', applicationId);
+
+//   if (options.hasOwnProperty('pageSize')) params.append('pageSize', options.pageSize);
+//   if (options.hasOwnProperty('pageNumber')) params.append('pageNumber', options.pageNumber);
+
+//   let response = await ep.getApplicationVersions(applicationId, params);
+//   results = {data: results.concat(response.data), meta: response.meta};
+
+//   let application = undefined;
+//   if (results.data.length > 0) {
+//     response = await ep.getApplicationByID(applicationId);
+//     application = response.data;
+//   } 
+
+//   for (let i=0; i<results.data.length; i++) {
+//     results.data[i].applicationDomainId = options?.domainId;
+//     results.data[i].domainName = options?.domainName;
+//     results.data[i].application = application;
+//   }
+
+//   let events = {};
+//   let eventVersions = {};
+//   for (let i=0; i<results.data.length; i++) {
+//     if (results.data[i].declaredProducedEventVersionIds) {
+//       for (let j=0; j<results.data[i].declaredProducedEventVersionIds.length; j++) {
+//         if (!eventVersions[results.data[i].declaredProducedEventVersionIds[j]]) {
+//           response = await ep.getEventVersionByID(results.data[i].declaredProducedEventVersionIds[j]);
+//           eventVersions[results.data[i].declaredProducedEventVersionIds[j]] = response.data;
+//         }
+//         if (!events[eventVersions[results.data[i].declaredProducedEventVersionIds[j]].eventId]) {
+//           response = await ep.getEventByID(eventVersions[results.data[i].declaredProducedEventVersionIds[j]].eventId);
+//           events[eventVersions[results.data[i].declaredProducedEventVersionIds[j]].eventId] = response.data; 
+//         }
+//       }
+//     }
+//     if (results.data[i].declaredConsumedEventVersionIds) {
+//       for (let j=0; j<results.data[i].declaredConsumedEventVersionIds.length; j++) {
+//         if (!eventVersions[results.data[i].declaredConsumedEventVersionIds[j]]) {
+//           response = await ep.getEventVersionByID(results.data[i].declaredConsumedEventVersionIds[j]);
+//           eventVersions[results.data[i].declaredConsumedEventVersionIds[j]] = response.data;
+//         }
+//         if (!events[eventVersions[results.data[i].declaredConsumedEventVersionIds[j]].eventId]) {
+//           response = await ep.getEventByID(eventVersions[results.data[i].declaredConsumedEventVersionIds[j]].eventId);
+//           events[eventVersions[results.data[i].declaredConsumedEventVersionIds[j]].eventId] = response.data; 
+//         }
+//       }
+//     }
+//   }
+
+//   let domains = {};
+//   let keys = Object.keys(events);
+//   for (let i=0; i<keys.length; i++) {
+//     if (!domains[events[keys[i]].applicationDomainId])
+//       domains[events[keys[i]].applicationDomainId] = await ep.getApplicationDomainName(events[keys[i]].applicationDomainId);
+//     events[keys[i]].domainName = domains[events[keys[i]].applicationDomainId]
+//   }
+
+//   results = {data: Object.values(events), meta: results.meta};
+//   return results;
+// }
+
 const getSolaceApplicationEvents = async (applicationId, solaceCloudToken, options=null) => {
-  let results = [];
-  let params = new URLSearchParams();
-  const ep = new EventPortal(solaceCloudToken.token);
-
-  // params.append('id', applicationId);
-
-  if (options.hasOwnProperty('pageSize')) params.append('pageSize', options.pageSize);
-  if (options.hasOwnProperty('pageNumber')) params.append('pageNumber', options.pageNumber);
-  let result = await ep.getApplicationVersions(applicationId, params);
-  results = results.concat(result);
-
-  let application = results.length > 0 ? await ep.getApplicationByID(applicationId) : undefined;
-  for (let i=0; i<results.length; i++) {
-    results[i].applicationDomainId = options?.domainId;
-    results[i].domainName = options?.domainName;
-    results[i].application = application;
-  }
-
-  let events = {};
-  for (let i=0; i<results.length; i++) {
-    results[i].producedEvents = [];
-    results[i].producedEvents.length = results[i].declaredProducedEventVersionIds.length
-    results[i].consumedEvents = [];
-    results[i].consumedEvents.length = results[i].declaredConsumedEventVersionIds.length
-    
-    for (let j=0; j<results[i].declaredProducedEventVersionIds.length; j++) {
-      if (!events[results[i].declaredProducedEventVersionIds[j]]) {
-        let eventVersion = await ep.getEventVersionByID(results[i].declaredProducedEventVersionIds[j]);
-        events[results[i].declaredProducedEventVersionIds[j]] = await ep.getEventByID(eventVersion.eventId);
-      }
-
-      results[i].producedEvents[j] = events[results[i].declaredProducedEventVersionIds[j]];
-    }
-    for (let j=0; j<results[i].declaredConsumedEventVersionIds.length; j++) {
-      if (!events[results[i].declaredConsumedEventVersionIds[j]]) {
-        let eventVersion = await ep.getEventVersionByID(results[i].declaredConsumedEventVersionIds[j]);
-        events[results[i].declaredConsumedEventVersionIds[j]] = await ep.getEventByID(eventVersion.eventId);
-      }
-      results[i].consumedEvents[j] = events[results[i].declaredConsumedEventVersionIds[j]];
-    }
-  }
-
-  let domains = {};
-  let keys = Object.keys(events);
-  for (let i=0; i<keys.length; i++) {
-    if (!domains[events[keys[i]].applicationDomainId])
-      domains[events[keys[i]].applicationDomainId] = await ep.getApplicationDomainName(events[keys[i]].applicationDomainId);
-    events[keys[i]].domainName = domains[events[keys[i]].applicationDomainId]
-  }
-
-  return Object.values(events);
+  let results = await getSolaceApplicationResources(applicationId, solaceCloudToken, options);
+  results.data = Object.values(results.data);
+  return results;
 }
 
 const getSolaceApplicationSchemas = async (applicationId, solaceCloudToken, options=null) => {
+  let results = await getSolaceApplicationResources(applicationId, solaceCloudToken, options);
+  results.data = Object.values(results.data).filter(obj => obj.schema !== undefined);
+  return results;
+}
+
+const getSolaceApplicationResources = async (applicationId, solaceCloudToken, options=null) => {
   let results = [];
   let params = new URLSearchParams();
   const ep = new EventPortal(solaceCloudToken.token);
 
   if (options.hasOwnProperty('pageSize')) params.append('pageSize', options.pageSize);
   if (options.hasOwnProperty('pageNumber')) params.append('pageNumber', options.pageNumber);
-  let result = await ep.getApplicationVersions(applicationId, params);
-  results = results.concat(result);
 
-  for (let i=0; i<results.length; i++) {
-    results[i].applicationDomainId = options?.domainId;
-    results[i].domainName = options?.domainName;
-  }
+  let response = await ep.getApplicationVersions(applicationId, params);
+  results = {data: results.concat(response.data), meta: response.meta};
+
+  let application = undefined;
+  if (results.data.length > 0) {
+    response = await ep.getApplicationByID(applicationId);
+    application = response.data;
+  } 
 
   let schemas = {};
-  let events = {};
-  for (let i=0; i<results.length; i++) {    
-    for (let j=0; j<results[i].declaredProducedEventVersionIds.length; j++) {
-      if (!events[results[i].declaredProducedEventVersionIds[j]]) {
-        let eventVersion = await ep.getEventVersionByID(results[i].declaredProducedEventVersionIds[j]);
-        events[results[i].declaredProducedEventVersionIds[j]] = eventVersion;
-        if (eventVersion.schemaVersionId && !schemas[eventVersion.schemaVersionId]) {
-          let schemaVersion = await ep.getSchemaVersionByID(eventVersion.schemaVersionId);
-          schemas[schemaVersion.schemaId] = await ep.getSchemaByID(schemaVersion.schemaId);
-          schemas[schemaVersion.schemaId].applicationDomainId = options?.domainId;
-          schemas[schemaVersion.schemaId].domainName = options?.domainName;
+  let eventVersions = {};
+  for (let i=0; i<results.data.length; i++) {    
+    for (let j=0; j<results.data[i].declaredProducedEventVersionIds.length; j++) {
+      if (!eventVersions[results.data[i].declaredProducedEventVersionIds[j]]) {
+        response = await ep.getEventVersionByID(results.data[i].declaredProducedEventVersionIds[j]);
+        let eventVersion = response.data;
+        response = await ep.getEventByID(eventVersion.eventId);
+        eventVersion.event = response.data;
+        eventVersion.applicationDomainId = options?.domainId;
+        eventVersion.domainName = options?.domainName;
+        eventVersion.application = application;
+    
+        eventVersions[results.data[i].declaredProducedEventVersionIds[j]] = eventVersion;
+        if (eventVersion.schemaVersionId && !eventVersions[eventVersion.schemaVersionId]) {
+          response = await ep.getSchemaVersionByID(eventVersion.schemaVersionId);
+          let schemaVersion = response.data;
+          response = await ep.getSchemaByID(schemaVersion.schemaId);
+          schemas[schemaVersion.schemaId] = response.data;
+          eventVersions[results.data[i].declaredProducedEventVersionIds[j]].schema = schemas[schemaVersion.schemaId];
+          eventVersions[results.data[i].declaredProducedEventVersionIds[j]].schemaVersion = schemaVersion;
         }
       }
     }
-    for (let j=0; j<results[i].declaredConsumedEventVersionIds.length; j++) {
-      if (!events[results[i].declaredConsumedEventVersionIds[j]]) {
-        let eventVersion = await ep.getEventVersionByID(results[i].declaredConsumedEventVersionIds[j]);
-        events[results[i].declaredConsumedEventVersionIds[j]] = eventVersion;
-        if (eventVersion.schemaVersionId && !schemas[eventVersion.schemaVersionId]) {
-          let schemaVersion = await ep.getSchemaVersionByID(eventVersion.schemaVersionId);
-          schemas[schemaVersion.schemaId] = await ep.getSchemaByID(schemaVersion.schemaId);
-          schemas[schemaVersion.schemaId].applicationDomainId = options?.domainId;
-          schemas[schemaVersion.schemaId].domainName = options?.domainName;
+    for (let j=0; j<results.data[i].declaredConsumedEventVersionIds.length; j++) {
+      if (!eventVersions[results.data[i].declaredConsumedEventVersionIds[j]]) {
+        response = await ep.getEventVersionByID(results.data[i].declaredConsumedEventVersionIds[j]);
+        let eventVersion = response.data;
+        response = await ep.getEventByID(eventVersion.eventId);
+        eventVersion.event = response.data;
+        eventVersion.applicationDomainId = options?.domainId;
+        eventVersion.domainName = options?.domainName;
+        eventVersion.application = application;
+
+        eventVersions[results.data[i].declaredConsumedEventVersionIds[j]] = eventVersion;
+        if (eventVersion.schemaVersionId && !eventVersions[eventVersion.schemaVersionId]) {
+          response = await ep.getSchemaVersionByID(eventVersion.schemaVersionId);
+          let schemaVersion = response.data;
+          response = await ep.getSchemaByID(schemaVersion.schemaId);
+          schemas[schemaVersion.schemaId] = response.data;
+          schemaVersion.schema = schemas[schemaVersion.schemaId];
+          eventVersions[results.data[i].declaredConsumedEventVersionIds[j]].schema = schemas[schemaVersion.schemaId];
+          eventVersions[results.data[i].declaredConsumedEventVersionIds[j]].schemaVersion = schemaVersion;
         }
       }
     }
   }
 
-  return Object.values(schemas);
+  results = {data: eventVersions, meta: results.meta};
+  return results;
 }
 
 const getSolaceEvents = async (mode, solaceCloudToken, options=null) => {
   let results = [];
   let params = new URLSearchParams();
-
   const ep = new EventPortal(solaceCloudToken.token);
 
   if (mode === 'name') params.append('name', options.name);
@@ -219,18 +295,19 @@ const getSolaceEvents = async (mode, solaceCloudToken, options=null) => {
   if (options.hasOwnProperty('pageNumber')) params.append('pageNumber', options.pageNumber);
 
   if (mode === 'all' || mode === 'name') {
-    let result = await ep.getEvents(params);
-    results = results.concat(result);
+    let response = await ep.getEvents(params);
+    results = {data: results.concat(response.data), meta: response.meta};
   } else if (mode === 'id') {
-    let result = await ep.getEventByID(options.id, params);
-    results = results.concat(result);
+    let response = await ep.getEventByID(options.id, params);
+    results = {data: results.concat(response.data), meta: response.meta};
   }
 
   let domains = {};
-  for (let i=0; i<results.length; i++) {
-    if (!domains[results[i].applicationDomainId])
-      domains[results[i].applicationDomainId] = await ep.getApplicationDomainName(results[i].applicationDomainId);
-    results[i].domainName = domains[results[i].applicationDomainId];
+  for (let i=0; i<results.data.length; i++) {
+    if (!domains[results.data[i].applicationDomainId])
+      domains[results.data[i].applicationDomainId] = await ep.getApplicationDomainName(results.data[i].applicationDomainId);
+    results.data[i].domainId = results.data[i].applicationDomainId;
+    results.data[i].domainName = domains[results.data[i].applicationDomainId];
   }
 
   return results;
@@ -241,78 +318,92 @@ const getSolaceEventVersions = async (eventId, solaceCloudToken, options=null) =
   let params = new URLSearchParams();
   const ep = new EventPortal(solaceCloudToken.token);
 
-  let result = undefined;
   if (options.hasOwnProperty('domainId')) params.append('applicationDomainId', options.domainId);
   if (options.hasOwnProperty('shared')) params.append('shared', options.shared);
   if (options.hasOwnProperty('sort')) params.append('sort', 'name:'+options.sort);
   if (options.hasOwnProperty('pageSize')) params.append('pageSize', options.pageSize);
   if (options.hasOwnProperty('pageNumber')) params.append('pageNumber', options.pageNumber);
+  
+  let response = undefined;
   if (options.hasOwnProperty('versionId'))
-    result = await ep.getEventVersionByID(options.versionId, params);
+    response = await ep.getEventVersionByID(options.versionId, params);
   else
-    result = await ep.getEventVersions(eventId, params);
+    response = await ep.getEventVersions(eventId, params);
+  results = {data: results.concat(response.data), meta: response.meta};
 
-  results = results.concat(result);
+  let event = undefined;
+  if (results.data.length > 0) {
+      response = await ep.getEventByID(results.data[0].eventId);
+      event = response.data;
+  }
 
-  let event = results.length > 0 ? await ep.getEventByID(results[0].eventId) : undefined;
-  for (let i=0; i<results.length; i++) {
-    results[i].applicationDomainId = options?.domainId;
-    results[i].domainName = options?.domainName;
-    results[i].event = event;
+  for (let i=0; i<results.data.length; i++) {
+    results.data[i].applicationDomainId = options?.domainId;
+    results.data[i].domainName = options?.domainName;
+    results.data[i].event = event;
   }  
 
-  for (let i=0; i<results.length; i++) {
-    results[i].applicationDomainId = options?.domainId;
-    results[i].domainName = options?.domainName;
-  }
   let schemas = {};
   let schemaVersions = {};
-  for (let i=0; i<results.length; i++) {    
-    if (results[i].schemaVersionId && !schemaVersions[results[i].schemaVersionId]) {
-      if (!schemaVersions[results[i].schemaVersionId])
-        schemaVersions[results[i].schemaVersionId] = await ep.getSchemaVersionByID(results[i].schemaVersionId);;
-      if (!schemas[schemaVersions[results[i].schemaVersionId].schemaId])
-        schemas[schemaVersions[results[i].schemaVersionId].schemaId] = await ep.getSchemaByID(schemaVersions[results[i].schemaVersionId].schemaId);
+  for (let i=0; i<results.data.length; i++) {    
+    if (results.data[i].schemaVersionId) {
+      if (!schemaVersions[results.data[i].schemaVersionId]) {
+        response = await ep.getSchemaVersionByID(results.data[i].schemaVersionId);
+        schemaVersions[results.data[i].schemaVersionId] = response.data;
+      }
+      if (!schemas[results.data[i].schemaVersionId]) {
+        response = await ep.getSchemaByID(schemaVersions[results.data[i].schemaVersionId].schemaId);
+        schemas[results.data[i].schemaVersionId] = response.data;
+      }
     }
 
-    results[i].schemaVersion = schemaVersions[results[i].schemaVersionId];
-    results[i].schema = schemas[results[i].schemaVersion.schemaId];
+    results.data[i].schemaVersion = results.data[i].schemaVersionId ? schemaVersions[results.data[i].schemaVersionId] : undefined;
+    results.data[i].schema = results.data[i].schemaVersionId ? schemas[results.data[i].schemaVersionId] : undefined;
   }
 
-  let appVersions = {};
-  let apps = {};
-  for (let i=0; i<results.length; i++) {
-    results[i].producingApps = [];
-    results[i].producingApps.length = results[i].declaredProducingApplicationVersionIds.length
-    results[i].consumingApps = [];
-    results[i].consumingApps.length = results[i].declaredConsumingApplicationVersionIds.length
+  let allAppVersions = {};
+  let allApps = {};
+
+  for (let i=0; i<results.data.length; i++) {
+    let appVersions = {};
+    let apps = {};
     
-    for (let j=0; j<results[i].declaredProducingApplicationVersionIds.length; j++) {
-      if (!appVersions[results[i].declaredProducingApplicationVersionIds[j]]) {
-        let appVersion = await ep.getApplicationVersionByID(results[i].declaredProducingApplicationVersionIds[j]);
-        appVersions[results[i].declaredProducingApplicationVersionIds[j]] = appVersion;
-        if (!apps[appVersion.applicationId]) {
-          let app = await ep.getApplicationByID(appVersion.applicationId);
-          apps[appVersion.applicationId] = app;
+    for (let j=0; j<results.data[i].declaredProducingApplicationVersionIds.length; j++) {
+      if (!allApps[results.data[i].declaredProducingApplicationVersionIds[j]]) {
+        if (!allAppVersions[results.data[i].declaredProducingApplicationVersionIds[j]]) {
+          response = await ep.getApplicationVersionByID(results.data[i].declaredProducingApplicationVersionIds[j]);;
+          allAppVersions[results.data[i].declaredProducingApplicationVersionIds[j]] = response.data;
         }
-        appVersions[results[i].declaredProducingApplicationVersionIds[j]].applicationName = apps[appVersion.applicationId].name;
+        if (!allApps[results.data[i].declaredProducingApplicationVersionIds[j]]) {
+          response = await ep.getApplicationByID(allAppVersions[results.data[i].declaredProducingApplicationVersionIds[j]].applicationId);
+          allApps[results.data[i].declaredProducingApplicationVersionIds[j]] = response.data;
+        }
       }
 
-      results[i].producingApps[j] = appVersions[results[i].declaredProducingApplicationVersionIds[j]];
+      if (!appVersions[results.data[i].declaredProducingApplicationVersionIds[j]])
+        appVersions[results.data[i].declaredProducingApplicationVersionIds[j]] = allAppVersions[results.data[i].declaredProducingApplicationVersionIds[j]]
+      if (!apps[results.data[i].declaredProducingApplicationVersionIds[j]])
+        apps[results.data[i].declaredProducingApplicationVersionIds[j]] = allApps[results.data[i].declaredProducingApplicationVersionIds[j]]
     }
-    for (let j=0; j<results[i].declaredConsumingApplicationVersionIds.length; j++) {
-      if (!appVersions[results[i].declaredConsumingApplicationVersionIds[j]]) {
-        let appVersion = await ep.getApplicationVersionByID(results[i].declaredConsumingApplicationVersionIds[j]);
-        appVersions[results[i].declaredConsumingApplicationVersionIds[j]] = appVersion;
-        if (!apps[appVersion.applicationId]) {
-          let app = await ep.getApplicationByID(appVersion.applicationId);
-          apps[appVersion.applicationId] = app;
+    for (let j=0; j<results.data[i].declaredConsumingApplicationVersionIds.length; j++) {
+      if (!allApps[results.data[i].declaredConsumingApplicationVersionIds[j]]) {
+        if (!allAppVersions[results.data[i].declaredConsumingApplicationVersionIds[j]]) {
+          response = await ep.getApplicationVersionByID(results.data[i].declaredConsumingApplicationVersionIds[j]);
+          allAppVersions[results.data[i].declaredConsumingApplicationVersionIds[j]] = response.data;
         }
-        appVersions[results[i].declaredProducingApplicationVersionIds[j]].applicationName = apps[appVersion.applicationId].name;
+        if (!allApps[results.data[i].declaredConsumingApplicationVersionIds[j]]) {
+          response = await ep.getApplicationByID(allAppVersions[results.data[i].declaredConsumingApplicationVersionIds[j]].applicationId);
+          allApps[results.data[i].declaredConsumingApplicationVersionIds[j]] = response.data;
+        }
       }
-
-      results[i].consumingApps[j] = appVersions[results[i].declaredConsumingApplicationVersionIds[j]];
+      if (!appVersions[results.data[i].declaredConsumingApplicationVersionIds[j]])
+        appVersions[results.data[i].declaredConsumingApplicationVersionIds[j]] = allAppVersions[results.data[i].declaredConsumingApplicationVersionIds[j]]
+      if (!apps[results.data[i].declaredConsumingApplicationVersionIds[j]])
+        apps[results.data[i].declaredConsumingApplicationVersionIds[j]] = allApps[results.data[i].declaredConsumingApplicationVersionIds[j]]
     }
+
+    results.data[i].apps = apps;
+    results.data[i].appVersions = appVersions;
   }
 
   return results;
@@ -321,7 +412,6 @@ const getSolaceEventVersions = async (eventId, solaceCloudToken, options=null) =
 const getSolaceSchemas = async (mode, solaceCloudToken, options=null) => {
   let results = [];
   let params = new URLSearchParams();
-
   const ep = new EventPortal(solaceCloudToken.token);
 
   if (mode === 'name') params.append('name', options.name);
@@ -332,18 +422,19 @@ const getSolaceSchemas = async (mode, solaceCloudToken, options=null) => {
   if (options.hasOwnProperty('pageNumber')) params.append('pageNumber', options.pageNumber);
 
   if (mode === 'all' || mode === 'name') {
-    let result = await ep.getSchemas(params);
-    results = results.concat(result);
+    let response = await ep.getSchemas(params);
+    results = {data: results.concat(response.data), meta: response.meta};
   } else if (mode === 'id') {
-    let result = await ep.getSchemaByID(options.id, params);
-    results = results.concat(result);
+    let response = await ep.getSchemaByID(options.id, params);
+    results = results.concat(response.data);
   }
 
   let domains = {};
-  for (let i=0; i<results.length; i++) {
-    if (!domains[results[i].applicationDomainId])
-      domains[results[i].applicationDomainId] = await ep.getApplicationDomainName(results[i].applicationDomainId);
-    results[i].domainName = domains[results[i].applicationDomainId];
+  for (let i=0; i<results.data.length; i++) {
+    if (!domains[results.data[i].applicationDomainId])
+      domains[results.data[i].applicationDomainId] = await ep.getApplicationDomainName(results.data[i].applicationDomainId);
+    results.data[i].domainId = results.data[i].applicationDomainId;
+    results.data[i].domainName = domains[results.data[i].applicationDomainId];
   }
 
   return results;
@@ -360,31 +451,56 @@ const getSolaceSchemaVersions = async (schemaId, solaceCloudToken, options=null)
   if (options.hasOwnProperty('sort')) params.append('sort', 'name:'+options.sort);
   if (options.hasOwnProperty('pageSize')) params.append('pageSize', options.pageSize);
   if (options.hasOwnProperty('pageNumber')) params.append('pageNumber', options.pageNumber);
+  
+  let response = undefined;
   if (options.hasOwnProperty('versionId'))
-    result = await ep.getSchemaVersionByID(options.versionId, params);
+    response = await ep.getSchemaVersionByID(options.versionId, params);
   else
-    result = await ep.getSchemaVersions(schemaId, params);
-  results = results.concat(result);
+    response = await ep.getSchemaVersions(schemaId, params);
+  results = {data: results.concat(response.data), meta: response.meta};
 
-  for (let i=0; i<results.length; i++) {
-    results[i].applicationDomainId = options?.domainId;
-    results[i].domainName = options?.domainName;
-    results[i].schemaName = options?.name;
+  for (let i=0; i<results.data.length; i++) {
+    results.data[i].applicationDomainId = options?.domainId;
+    results.data[i].domainName = options?.domainName;
+    results.data[i].schemaName = options?.name;
   }
+
   let schemas = {};
-  let events = {};
-  for (let i=0; i<results.length; i++) {    
-    if (results[i].schemaId && !schemas[results[i].schemaId])
-      schemas[results[i].schemaId] = await ep.getSchemaByID(results[i].schemaId);
-    results[i].schema = schemas[results[i].schemaId];
-    if (results[i].referencedByEventVersionIds && results[i].referencedByEventVersionIds.length) {
-      results[i].eventVersions = []
-      for (let j=0; j<results[i].referencedByEventVersionIds.length; j++)
-        results[i].eventVersions.push(await ep.getEventVersionByID(results[i].referencedByEventVersionIds[j]))
-      for (let j=0; j<results[i].eventVersions.length; j++)
-        results[i].eventVersions[j].event = await ep.getEventByID(results[i].eventVersions[j].eventId);
+  let allEventVersions = {};
+  let allEvents = {};
+
+  for (let i=0; i<results.data.length; i++) {
+    if (!schemas[results.data[i].schemaId]) {
+      response = await ep.getSchemaByID(results.data[i].schemaId);
+      schemas[results.data[i].schemaId] = response.data;
     }
+    results.data[i].schema = schemas[results.data[i].schemaId];
+
+    let eventVersions = {};
+    let events = {};
+    
+    if (results.data[i].referencedByEventVersionIds) {
+      for (let j=0; j<results.data[i].referencedByEventVersionIds.length; j++) {
+        if (!allEvents[results.data[i].referencedByEventVersionIds[j]]) {
+          if (!allEventVersions[results.data[i].referencedByEventVersionIds[j]]) {
+            response = await ep.getEventVersionByID(results.data[i].referencedByEventVersionIds[j]);
+            allEventVersions[results.data[i].referencedByEventVersionIds[j]] = response.data;
+          }
+          if (!allEvents[results.data[i].referencedByEventVersionIds[j]]) {
+            response = await ep.getEventByID(allEventVersions[results.data[i].referencedByEventVersionIds[j]].eventId);
+            allEvents[results.data[i].referencedByEventVersionIds[j]] = response.data;
+          }
+        }
+
+        eventVersions[results.data[i].referencedByEventVersionIds[j]] = allEventVersions[results.data[i].referencedByEventVersionIds[j]]
+        events[results.data[i].referencedByEventVersionIds[j]] = allEvents[results.data[i].referencedByEventVersionIds[j]]
+      }
+    }
+
+    results.data[i].events = events;
+    results.data[i].eventVersions = eventVersions;
   }
+
 
   return results;
 }

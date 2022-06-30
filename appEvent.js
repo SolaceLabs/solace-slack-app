@@ -1,4 +1,3 @@
-const EventPortal = require('./epwrapper')
 const JsonDB = require('node-json-db').JsonDB;
 const db = new JsonDB('tokens', true, false);
 
@@ -32,10 +31,15 @@ const parseSolaceLink = (link) => {
     return false;
 
   let cmd = {};
+  if (url.pathname === '/ep/designer') {
+    cmd.resource = 'domains';
+    cmd.scope = 'all';
+    return cmd;
+  }
   let vals = url.pathname.split('/');
   for (let j=0; j<vals.length; j++) {
     if (vals[j] === 'domains') {
-      cmd.resource = 'domain';            
+      cmd.resource = 'domains';            
       if (!vals[j+1]) {
         cmd.scope = 'all';
       } else {
@@ -44,7 +48,7 @@ const parseSolaceLink = (link) => {
       }
     }
     if (vals[j] === 'applications' && vals[j+1]) {
-      cmd.resource = 'application';            
+      cmd.resource = 'applications';            
       if (!vals[j+1]) {
         cmd.scope = 'all';
       } else {
@@ -53,7 +57,7 @@ const parseSolaceLink = (link) => {
       }
     }
     if (vals[j] === 'events' && vals[j+1]) {
-      cmd.resource = 'event';            
+      cmd.resource = 'events';            
       if (!vals[j+1]) {
         cmd.scope = 'all';
       } else {
@@ -62,7 +66,7 @@ const parseSolaceLink = (link) => {
       }
     }
     if (vals[j] === 'schemas' && vals[j+1]) {
-      cmd.resource = 'schema';            
+      cmd.resource = 'schemas';            
       if (!vals[j+1]) {
         cmd.scope = 'all';
       } else {
@@ -74,10 +78,10 @@ const parseSolaceLink = (link) => {
 
   if (url.pathname.indexOf('/domains/') > 0 || url.pathname.indexOf('/domains?') > 0 ||url.pathname.endsWith('/domains')) {
     cmd.scope = 'all';
-    cmd.resource = 'domain';
+    cmd.resource = 'domains';
     if (url.searchParams.has('selectedDomainId')) {
       cmd.scope = 'id';
-      cmd.resource = 'domain';
+      cmd.resource = 'domains';
       cmd.domainId = url.searchParams.get('selectedDomainId');
     }
     if (cmd.domainId) {
@@ -87,15 +91,15 @@ const parseSolaceLink = (link) => {
 
   if (url.pathname.indexOf('/applications/') > 0 || url.pathname.indexOf('/applications?') > 0 ||url.pathname.endsWith('/applications')) {
     cmd.scope = 'all';
-    cmd.resource = 'application';
+    cmd.resource = 'applications';
     if (url.searchParams.has('selectedId')) {
       cmd.scope = 'id';
-      cmd.resource = 'application';
+      cmd.resource = 'applications';
       cmd.applicationId = url.searchParams.get('selectedId');
     }
     if (url.searchParams.has('selectedVersionId')) {
       cmd.scope = 'id';
-      cmd.resource = 'application';
+      cmd.resource = 'applications';
       cmd.versionId = url.searchParams.get('selectedVersionId');
     }
     if (cmd.applicationId) {
@@ -104,15 +108,15 @@ const parseSolaceLink = (link) => {
   }
   if (url.pathname.indexOf('/events/') > 0 || url.pathname.indexOf('/events?') > 0 ||url.pathname.endsWith('/events')) {
     cmd.scope = 'all';
-    cmd.resource = 'event';
+    cmd.resource = 'events';
     if (url.searchParams.has('selectedId')) {
       cmd.scope = 'id';
-      cmd.resource = 'event';
+      cmd.resource = 'events';
       cmd.eventId = url.searchParams.get('selectedId');
     }
     if (url.searchParams.has('selectedVersionId')) {
       cmd.scope = 'id';
-      cmd.resource = 'event';
+      cmd.resource = 'events';
       cmd.versionId = url.searchParams.get('selectedVersionId');
     }
     if (cmd.eventId) {
@@ -122,15 +126,15 @@ const parseSolaceLink = (link) => {
 
   if (url.pathname.indexOf('/schemas/') > 0 || url.pathname.indexOf('/schemas?') > 0 ||url.pathname.endsWith('/schemas')) {
     cmd.scope = 'all';
-    cmd.resource = 'schema';
+    cmd.resource = 'schemas';
     if (url.searchParams.has('selectedId')) {
       cmd.scope = 'id';
-      cmd.resource = 'schema';
+      cmd.resource = 'schemas';
       cmd.schemaId = url.searchParams.get('selectedId');
     }
     if (url.searchParams.has('selectedVersionId')) {
       cmd.scope = 'id';
-      cmd.resource = 'schema';
+      cmd.resource = 'schemas';
       cmd.versionId = url.searchParams.get('selectedVersionId');
     }
     if (cmd.schemaId) {
@@ -200,76 +204,71 @@ const appLinkSharedEvent = async({event, context, payload}) => {
             type: "mrkdwn",
             text: "*Discover, Visualize and Catalog Your Event Streams With PubSub+ Event Portal*\n\n"
           },
-          accessory: {
-            type: "image",
-            image_url: `https://cdn.solace.com/wp-content/uploads/2019/02/snippets-psc-animation-new.gif`,
-            alt_text: "solace cloud"
-          }    
         },
         {
           type: "divider"
         }
       ]
     
-      let results = [];
-      if (cmd.resource === 'domain') {
-        let options = { id: cmd.domainId, pageSize: 1, pageNumber: 1}
-        results = await getSolaceApplicationDomains(cmd.scope, solaceCloudToken, options)
-        if (!results.length)
+      let response = undefined;
+
+      if (cmd.resource === 'domains') {
+        let options = { id: cmd.domainId, pageSize: 5, pageNumber: 1}
+        response = await getSolaceApplicationDomains(cmd.scope, solaceCloudToken, options)
+        if (!response.data.length)
           resultBlock = emptyBlock;
         else {
-          resultBlock = buildDomainBlocks(results, solaceCloudToken.domain, {cmd, options}); 
+          resultBlock = buildDomainBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta}); 
           resultBlock[0] = headerBlock.concat(resultBlock[0]);
         } 
-
-      } else if (cmd.resource === 'application') {
+      } else if (cmd.resource === 'applications') {
         let options = { id: cmd.applicationId, domainId: cmd.domainId, domainName: cmd.domainName, 
-                        versionId: cmd.versionId, pageSize: 1, pageNumber: 1}
+                        versionId: cmd.versionId, pageSize: 5, pageNumber: 1}
         if (cmd.versionId) {
-          results = await getSolaceApplicationVersions(cmd.applicationId, solaceCloudToken, options)
-          if (!results.length)
+          response = await getSolaceApplicationVersions(cmd.applicationId, solaceCloudToken, options)
+          if (!response.data.length)
             resultBlock = emptyBlock;
           else
-            resultBlock = buildApplicationVersionBlocks(results, solaceCloudToken.domain, {cmd, options});        
+            resultBlock = buildApplicationVersionBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});        
         } else {
-          results = await getSolaceApplications(cmd.scope, solaceCloudToken, options)
-          if (!results.length)
+          response = await getSolaceApplications(cmd.scope, solaceCloudToken, options)
+          if (!response.data.length)
             resultBlock = emptyBlock;
           else
-            resultBlock = buildApplicationBlocks(results, solaceCloudToken.domain, {cmd, options});        
+            resultBlock = buildApplicationBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});        
         }        
       } 
-      else if (cmd.resource === 'event') {
+      else if (cmd.resource === 'events') {
         let options = { id: cmd.eventId, domainId: cmd.domainId, domainName: cmd.domainName, 
-                        versionId: cmd.versionId, pageSize: 1, pageNumber: 1}
+                        versionId: cmd.versionId, pageSize: 5, pageNumber: 1}
         if (cmd.versionId) {
-          results = await getSolaceEventVersions(cmd.eventId, solaceCloudToken, options)
-          if (!results.length)
+          response = await getSolaceEventVersions(cmd.eventId, solaceCloudToken, options)
+          if (!response.data.length)
             resultBlock = emptyBlock;
           else
-            resultBlock = buildEventVersionBlocks(results, solaceCloudToken.domain, {cmd, options});        
+            resultBlock = buildEventVersionBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});        
         } else {
-          results = await getSolaceEvents(cmd.scope, solaceCloudToken, options)
-          if (!results.length)
+          response = await getSolaceEvents(cmd.scope, solaceCloudToken, options)
+          if (!response.data.length)
             resultBlock = emptyBlock;
           else
-            resultBlock = buildEventBlocks(results, solaceCloudToken.domain, {cmd, options});        
+            resultBlock = buildEventBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});        
         }        
-      } else if (cmd.resource === 'schema') {
+      } else if (cmd.resource === 'schemas') {
         let options = { id: cmd.schemaId, domainId: cmd.domainId, domainName: cmd.domainName, 
-                        versionId: cmd.versionId, pageSize: 1, pageNumber: 1}
+                        versionId: cmd.versionId, pageSize: 5, pageNumber: 1}
         if (cmd.versionId) {
-          results = await getSolaceSchemaVersions(cmd.schemaId, solaceCloudToken, options)
-          if (!results.length)
+          response = await getSolaceSchemaVersions(cmd.schemaId, solaceCloudToken, options)
+          if (!response.data.length)
             resultBlock = emptyBlock;
           else
-            resultBlock = buildSchemaVersionBlocks(results, solaceCloudToken.domain, {cmd, options});        
+            resultBlock = buildSchemaVersionBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});        
         } else {
-          results = await getSolaceSchemas(cmd.scope, solaceCloudToken, options)
-          if (!results.length)
+          response = await getSolaceSchemas(cmd.scope, solaceCloudToken, options)
+          if (!response.data.length)
             resultBlock = emptyBlock;
           else
-            resultBlock = buildSchemaBlocks(results, solaceCloudToken.domain, {cmd, options});        
+            resultBlock = buildSchemaBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});        
         }   
       }
     } catch (error) {
@@ -293,7 +292,7 @@ const appLinkSharedEvent = async({event, context, payload}) => {
           token: process.env.SLACK_BOT_TOKEN,
           channel: payload.channel,
           user: payload.user,
-          blocks,
+          errorBlock,
           text: 'Unfurl error'
         });
       else {

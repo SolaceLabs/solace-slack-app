@@ -2,7 +2,7 @@ const { App, LogLevel } = require("@slack/bolt");
 const { echoSlashCommand, solaceSlashCommand } = require('./appCommand');
 const { appHomeOpenedEvent, appLinkSharedEvent } = require('./appEvent');
 const { helloMessage } = require('./appMessage');
-const { blockActions, authorizeEPTokenAction, modifyEPTokenAction, getMoreResources, showHelpAction, showExamplesAction } = require('./appActions');
+const { fetchDependentResources, authorizeEPTokenAction, modifyEPTokenAction, getMoreResources, showHelpAction, showExamplesAction } = require('./appActions');
 const { modalView } = require('./appViews');
 const NodeCache = require( "node-cache" );
 const cache = new NodeCache();
@@ -26,10 +26,10 @@ app.event('link_shared', appLinkSharedEvent);
 
 app.message('hello', helloMessage);
 
-app.action('block_actions', blockActions);
+app.action('block_actions', fetchDependentResources);
 app.action('click_authorize', authorizeEPTokenAction);
 app.action('click_show_help', showHelpAction);
-app.action('click_get_all', getMoreResources);
+// app.action('click_get_more', fetchDependentResources);
 app.action('click_get_more', getMoreResources);
 
 app.action('click_examples_domains', showExamplesAction);

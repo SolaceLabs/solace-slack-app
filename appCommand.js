@@ -21,7 +21,7 @@ const {
 } = require('./appUtils');
 const { showHelp, showExamples } = require('./appUtils');
 
-const resources = ['domain', 'application', 'event', 'schema', 'register', 'help', 'examples']
+const resources = ['domains', 'applications', 'events', 'schemas', 'register', 'help', 'examples']
 const needArgs = ['name', 'domain', 'shared', 'sort'];
 const sharedArgs = ['true', 'false', 'TRUE', 'FALSE'];
 const sortArgs = ['asc', 'desc', 'ASC', 'DESC'];
@@ -116,7 +116,7 @@ const isValidSolaceCommand = async (command, solaceCloudToken) => {
       }
     } else if (subArgs[0] === 'shared') {
       if (!sharedArgs.includes(nextArg)) {
-        cmd.error = 'Invalid value for parmeter `' + subArgs[0] + '`';
+        cmd.error = 'Invalid value for parameter `' + subArgs[0] + '`';
         cmd.valid = false;
         console.log(cmd.error);
         return cmd;
@@ -152,11 +152,6 @@ const alreadyRegistered = [
       type: "mrkdwn",
       text: ":wave: *Yay, you have already registered wih Solace PubSub+ Event Portal, you are all set!*\n\n"
     },
-    accessory: {
-      type: "image",
-      image_url: `https://cdn.solace.com/wp-content/uploads/2019/02/snippets-psc-animation-new.gif`,
-      alt_text: "solace cloud"
-    }    
   },
   {
     type: "actions",
@@ -217,11 +212,6 @@ const solaceSlashCommand = async({ack, payload, context}) => {
                       + "\n\n"
                       + "_" + cmd.error + "_"
             },
-            accessory: {
-              type: "image",
-              image_url: `https://cdn.solace.com/wp-content/uploads/2019/02/snippets-psc-animation-new.gif`,
-              alt_text: "solace cloud"
-            }    
           },
           {
             type: "actions",
@@ -291,11 +281,6 @@ const solaceSlashCommand = async({ack, payload, context}) => {
         type: "mrkdwn",
         text: "*Executing command...*\n\n\n" + payload.command + " " + payload.text
       },
-      accessory: {
-        type: "image",
-        image_url: `https://cdn.solace.com/wp-content/uploads/2019/02/snippets-psc-animation-new.gif`,
-        alt_text: "solace cloud"
-      }    
     },
     {
       type: "divider"
@@ -349,70 +334,77 @@ const solaceSlashCommand = async({ack, payload, context}) => {
       text: 'Message from Solace App'
     });
 
-    let results = [];
+    let response = undefined;
 
-    if ((cmd.resource === 'domain')) {
-      let options = { mode: cmd.scope, pageSize: 1, pageNumber: 1}
+    if ((cmd.resource === 'domains')) {
+      let options = { mode: cmd.scope, pageSize: 5, pageNumber: 1}
       if (cmd.scope === 'name') options.name = cmd.name;
       if (cmd.scope === 'id') options.id = cmd.id;
       if (cmd.hasOwnProperty('sort')) options.sort = cmd.sort.toLowerCase();
       if (options.name)
         options.name = options.name.replaceAll('’', '\'').replaceAll('”', '"');
-      results = await getSolaceApplicationDomains(cmd.scope, solaceCloudToken, options)
-      if (!results.length)
+
+      response = await getSolaceApplicationDomains(cmd.scope, solaceCloudToken, options)
+      if (!response.data.length)
         resultBlock = emptyBlock;
       else
-        resultBlock = buildDomainBlocks(results, solaceCloudToken.domain, {cmd, options});
-    } else if (cmd.resource === 'application') {
-      let options = { mode: cmd.scope, pageSize: 1, pageNumber: 1}
+        resultBlock = buildDomainBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});
+    } else if (cmd.resource === 'applications') {
+      let options = { mode: cmd.scope, pageSize: 5, pageNumber: 1}
       if (cmd.scope === 'name') options.name = cmd.name;
       if (cmd.scope === 'id') options.id = cmd.id;
       if (cmd.hasOwnProperty('sort')) options.sort = cmd.sort.toLowerCase();
       if (cmd.hasOwnProperty('domain')) options.domainName = cmd.domain;
       if (cmd.hasOwnProperty('domainId')) options.domainId = cmd.domainId;
       if (cmd.hasOwnProperty('type')) options.type = cmd.type;
+      if (options.name)
+        options.name = options.name.replaceAll('’', '\'').replaceAll('”', '"');
 
-      results = await getSolaceApplications(cmd.scope, solaceCloudToken, options);
-      if (!results.length)
-        resultBlock = emptyBlock
+      response = await getSolaceApplications(cmd.scope, solaceCloudToken, options);
+      if (!response.data.length)
+        resultBlock = emptyBlock;
       else
-        resultBlock = buildApplicationBlocks(results, solaceCloudToken.domain, {cmd, options})
-    } else if (cmd.resource === 'event') {
-      let options = { mode: cmd.scope, pageSize: 1, pageNumber: 1}
+        resultBlock = buildApplicationBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});
+    } else if (cmd.resource === 'events') {
+      let options = { mode: cmd.scope, pageSize: 5, pageNumber: 1}
       if (cmd.scope === 'name') options.name = cmd.name;
       if (cmd.scope === 'id') options.id = cmd.id;
       if (cmd.hasOwnProperty('sort')) options.sort = cmd.sort.toLowerCase();
       if (cmd.hasOwnProperty('domain')) options.domainName = cmd.domain;
       if (cmd.hasOwnProperty('domainId')) options.domainId = cmd.domainId;
       if (cmd.hasOwnProperty('shared')) options.shared = cmd.shared.toUpperCase() === 'TRUE';
+      if (options.name)
+        options.name = options.name.replaceAll('’', '\'').replaceAll('”', '"');
 
-      results = await getSolaceEvents(cmd.scope, solaceCloudToken, options)
-      if (!results.length)
+      response = await getSolaceEvents(cmd.scope, solaceCloudToken, options);
+      if (!response.data.length)
         resultBlock = emptyBlock;
       else
-        resultBlock = buildEventBlocks(results, solaceCloudToken.domain, {cmd, options})
-    } else if (cmd.resource === 'schema') {
-        let options = { mode: cmd.scope, pageSize: 1, pageNumber: 1}
-        if (cmd.scope === 'name') options.name = cmd.name;
-        if (cmd.scope === 'id') options.id = cmd.id;
-        if (cmd.hasOwnProperty('sort')) options.sort = cmd.sort.toLowerCase();
-        if (cmd.hasOwnProperty('domain')) options.domainName = cmd.domain;
-        if (cmd.hasOwnProperty('domainId')) options.domainId = cmd.domainId;
-        if (cmd.hasOwnProperty('shared')) options.shared = cmd.shared.toUpperCase() === 'TRUE';
-  
-        results = await getSolaceSchemas(cmd.scope, solaceCloudToken, options)
-        if (!results.length)
-          resultBlock = emptyBlock;
-        else
-          resultBlock = buildSchemaBlocks(results, solaceCloudToken.domain, {cmd, options});
+        resultBlock = buildEventBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});
+    } else if (cmd.resource === 'schemas') {
+      let options = { mode: cmd.scope, pageSize: 5, pageNumber: 1}
+      if (cmd.scope === 'name') options.name = cmd.name;
+      if (cmd.scope === 'id') options.id = cmd.id;
+      if (cmd.hasOwnProperty('sort')) options.sort = cmd.sort.toLowerCase();
+      if (cmd.hasOwnProperty('domain')) options.domainName = cmd.domain;
+      if (cmd.hasOwnProperty('domainId')) options.domainId = cmd.domainId;
+      if (cmd.hasOwnProperty('shared')) options.shared = cmd.shared.toUpperCase() === 'TRUE';
+      if (options.name)
+        options.name = options.name.replaceAll('’', '\'').replaceAll('”', '"');
+
+      response = await getSolaceSchemas(cmd.scope, solaceCloudToken, options)
+      if (!response.data.length)
+        resultBlock = emptyBlock;
+      else
+        resultBlock = buildSchemaBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});
     }
 
-    await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
-      channel: payload.channel_id,
-      "blocks": successBlock,
-      text: 'Message from Solace App'
-    });
+    // await app.client.chat.postMessage({
+    //   token: process.env.SLACK_BOT_TOKEN,
+    //   channel: payload.channel_id,
+    //   "blocks": successBlock,
+    //   text: 'Message from Solace App'
+    // });
 
   } catch (error) {
     console.error("CAUGHT ERROR: ", error);
@@ -441,22 +433,37 @@ const solaceSlashCommand = async({ack, payload, context}) => {
     else {
       if (checkArrayOfArrays(resultBlock)) {
         for (let i=0; i<resultBlock.length; i++) {
+          let chunkBlocks = [];
+          for (let k=0;k<resultBlock[i].length;k+= 10) {
+            const chunk = resultBlock[i].slice(k, k + 10);
+            chunkBlocks.push(chunk);
+          }      
+            
+          for (let k=0; k<chunkBlocks.length; k++) {
+            await app.client.chat.postMessage({
+              token: process.env.SLACK_BOT_TOKEN,
+              channel: payload.channel_id,
+              "blocks": chunkBlocks[k],
+              text: 'Message from Solace App'
+            });  
+          }
+        }
+      } else {
+        let chunkBlocks = [];
+        for (let k=0;k<resultBlock.length;k+= 10) {
+          const chunk = resultBlock.slice(k, k + 10);
+          chunkBlocks.push(chunk);
+        }
+          
+        for (let k=0; k<chunkBlocks.length; k++) {
           await app.client.chat.postMessage({
             token: process.env.SLACK_BOT_TOKEN,
             channel: payload.channel_id,
-            "blocks": resultBlock[i],
+            "blocks": chunkBlocks[k],
             text: 'Message from Solace App'
-          });
+          });  
         }
-      } else {
-        await app.client.chat.postMessage({
-          token: process.env.SLACK_BOT_TOKEN,
-          channel: payload.channel_id,
-          "blocks": resultBlock,
-          text: 'Message from Solace App'
-        });  
       }
-  
     }
   } catch (error) {
     console.error(error);

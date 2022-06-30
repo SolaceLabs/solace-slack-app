@@ -167,7 +167,7 @@ class EventPortal {
         let url = `applications`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
       throw new Error(error)
     }
@@ -179,7 +179,7 @@ class EventPortal {
         let url = `applications/${applicationId}`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
         throw new Error(error)
     }
@@ -191,7 +191,7 @@ class EventPortal {
         let url = `applications/${applicationId}/versions`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
       throw new Error(error)
     }
@@ -203,7 +203,7 @@ class EventPortal {
         let url = `applicationVersions/${versionId}`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
         throw new Error(error)
     }
@@ -373,7 +373,7 @@ class EventPortal {
         let url = `events`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
         throw new Error(error)
     }
@@ -385,7 +385,7 @@ class EventPortal {
         let url = `events/${eventId}`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
         throw new Error(error)
     }
@@ -397,7 +397,7 @@ class EventPortal {
         let url = `events/${eventId}/versions`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
         throw new Error(error)
     }
@@ -409,7 +409,7 @@ class EventPortal {
         let url = `eventVersions/${versionId}`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
         throw new Error(error)
     }
@@ -574,7 +574,7 @@ class EventPortal {
         let url = `schemas`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
         throw new Error(error)
     }
@@ -586,7 +586,7 @@ class EventPortal {
         let url = `schemas/${schemaId}`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
         throw new Error(error)
     }
@@ -598,7 +598,7 @@ class EventPortal {
         let url = `schemaVersions/${versionId}`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
         throw new Error(error)
     }
@@ -610,7 +610,7 @@ class EventPortal {
         let url = `schemas/${schemaId}/versions`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
         throw new Error(error)
     }
@@ -685,7 +685,7 @@ class EventPortal {
         let url = `applicationDomains`
         url = url + (params ? `?${params}` : '');
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
         throw new Error(error)
     }
@@ -699,7 +699,7 @@ class EventPortal {
 
         console.log('getApplicationDomainByID Endpoint', url);
         const response = await this.api(this.token, 'GET', url, null)
-        return response.data;
+        return response;
     } catch (error) {
         throw new Error(error)
     }
@@ -711,7 +711,7 @@ class EventPortal {
         throw new Error('You must pass a SolaceCloud Token, method, and endpoint')
       };
       const url = `https://api.solace.cloud/api/v2/architecture/${endpoint}`;
-      console.log('API URL', url);
+      // console.log('API URL', url);
       const response = await axios({
         method,
         url,
@@ -722,7 +722,8 @@ class EventPortal {
           }`
         }
       });
-      // console.log('API RESUKT', response.data);
+      // console.log('API RESPONSE', response?.data);
+
       return response?.data
     } catch (error) {
       throw new Error(error.response.data.message)

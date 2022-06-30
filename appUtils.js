@@ -45,20 +45,16 @@ const postRegisterMessage = async (channel, user) => {
           type: "mrkdwn",
           text: "*Discover, Visualize and Catalog Your Event Streams With PubSub+ Event Portal*\n\n\n"
         },
-        accessory: {
-          type: "image",
-          image_url: `https://cdn.solace.com/wp-content/uploads/2019/02/snippets-psc-animation-new.gif`,
-          alt_text: "solace cloud"
-        }    
       },
       {
         type: "section",
         text: {
           type: "mrkdwn",
           text: ":boom: Hey there 👋 I'm SolaceBot. \n\nCould not process your request yet, sorry about that!\n\n"
-                + "I need you to register a valid API Token to access Solace Event Portal.\n"
-                + "It just takes a second, and then you'll be all set. "
-                + "Just click on the link below."
+                    + "I need you to register a valid API token to access Solace Event Portal. "
+                    + "Follow the link to create a API token in the <https://solace-sso.solace.cloud/api-tokens/create|*Event Portal*>. "
+                    + "It just takes a minute, and then you'll be all set. "
+                    + "\nJust click on `Register` button below and update the token and domain details."
         },
       },      
       {
@@ -124,11 +120,11 @@ const showHelp = async(userId, channelId) => {
       "fields": [
         { 
           "type": "mrkdwn", 
-          "text": "Get application domains " 
+          "text": "Get all application domains " 
         }, 
         {
           "type": "mrkdwn",
-          "text": "`/solace domain`"
+          "text": "`/solace domains`"
         },
         { 
           "type": "mrkdwn", 
@@ -136,7 +132,7 @@ const showHelp = async(userId, channelId) => {
         }, 
         {
           "type": "mrkdwn",
-          "text": '`/solace domain name:\"domain name\"`'
+          "text": '`/solace domains name:\"domain name\"`'
         },
       ]
     },
@@ -172,7 +168,7 @@ const showHelp = async(userId, channelId) => {
         }, 
         {
           "type": "mrkdwn",
-          "text": "`/solace application [domain:\"domain name\"] [sort:ASC|DESC]`"
+          "text": "`/solace applications [domain:\"domain name\"] [sort:ASC|DESC]`"
         },
         { 
           "type": "mrkdwn", 
@@ -180,7 +176,7 @@ const showHelp = async(userId, channelId) => {
         }, 
         {
           "type": "mrkdwn",
-          "text": '`/solace application name:\"application name\" [domain:\"domain name\"] `'
+          "text": '`/solace applications name:\"application name\" [domain:\"domain name\"] `'
         },
       ]
     },
@@ -216,7 +212,7 @@ const showHelp = async(userId, channelId) => {
         }, 
         {
           "type": "mrkdwn",
-          "text": "`/solace event [domain:\"domain name\"] [shared:true|false] [sort:ASC|DESC]`"
+          "text": "`/solace events [domain:\"domain name\"] [shared:true|false] [sort:ASC|DESC]`"
         },
         { 
           "type": "mrkdwn", 
@@ -224,7 +220,7 @@ const showHelp = async(userId, channelId) => {
         }, 
         {
           "type": "mrkdwn",
-          "text": '`/solace event name:\"event name\"`'
+          "text": '`/solace events name:\"event name\"`'
         },
       ]
     },
@@ -260,7 +256,7 @@ const showHelp = async(userId, channelId) => {
         }, 
         {
           "type": "mrkdwn",
-          "text": "`/solace schema [domain:\"domain name\"] [shared:true|false] [sort:ASC|DESC]`"
+          "text": "`/solace schemas [domain:\"domain name\"] [shared:true|false] [sort:ASC|DESC]`"
         },
         { 
           "type": "mrkdwn", 
@@ -268,7 +264,7 @@ const showHelp = async(userId, channelId) => {
         }, 
         {
           "type": "mrkdwn",
-          "text": '`/solace schema name:\"schema name\"`'
+          "text": '`/solace schemas name:\"schema name\"`'
         },
       ]
     },
@@ -285,33 +281,33 @@ const showHelp = async(userId, channelId) => {
         },
       ]
     },        
-    {
-      type: "divider"
-    },
+    // {
+    //   type: "divider"
+    // },
 
-    {
-      "type": "section",
-      text: {
-        type: "mrkdwn",
-        "text": "*App Registration*"
-      },
-    },
-    {
-      "type": "section",
-      "fields": [
-        { 
-          "type": "mrkdwn", 
-          "text": "Register App" 
-        }, 
-        {
-          "type": "mrkdwn",
-          "text": "`/solace register`"
-        },
-      ]
-    },
-    {
-      type: "divider"
-    },    
+    // {
+    //   "type": "section",
+    //   text: {
+    //     type: "mrkdwn",
+    //     "text": "*App Registration*"
+    //   },
+    // },
+    // {
+    //   "type": "section",
+    //   "fields": [
+    //     { 
+    //       "type": "mrkdwn", 
+    //       "text": "Register App" 
+    //     }, 
+    //     {
+    //       "type": "mrkdwn",
+    //       "text": "`/solace register`"
+    //     },
+    //   ]
+    // },
+    // {
+    //   type: "divider"
+    // },    
 
     {
       "type": "section",
@@ -320,22 +316,6 @@ const showHelp = async(userId, channelId) => {
         "text": "*Miscellaneous*"
       },
     },
-    {
-      "type": "section",
-      "fields": [
-        { 
-          "type": "mrkdwn", 
-          "text": "Search resource" 
-        }, 
-        {
-          "type": "mrkdwn",
-          "text": "`/solace search`"
-        },
-      ]
-    },
-    {
-      type: "divider"
-    },    
     {
       "type": "section",
       "fields": [
@@ -377,7 +357,7 @@ const showHelp = async(userId, channelId) => {
             type: "plain_text",
             text: ":book: Documentation",
           },
-          url: "https://github.com/gvensan/solace-slackapp"
+          url: "https://github.com/SolaceLabs/solace-slack-app"
         },
         {
           type: "button",
@@ -385,7 +365,15 @@ const showHelp = async(userId, channelId) => {
             type: "plain_text",
             text: ":thought_balloon: Feedback"
           },
-          url: "https://github.com/gvensan/solace-slackapp/issues/new"
+          url: "https://github.com/SolaceLabs/solace-slack-app/issues/new"
+        },
+        {
+          type: "button",
+          text: {
+            type: "plain_text",
+            text: ":busts_in_silhouette: Community"
+          },
+          url: "https://solace.community/"
         },
       ]
     },
@@ -430,7 +418,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn", 
-          "text": "`/solace domain`\n"
+          "text": "`/solace domains`\n"
                   + "Get all application domains" 
         }, 
       },
@@ -438,7 +426,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn",
-          "text": '`/solace domain name:\"EP-Integration\"`\n'
+          "text": '`/solace domains name:\"EP-Integration\"`\n'
                   + "Get application domain by name \"EP-Integration\" " 
 
         },
@@ -463,7 +451,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn", 
-          "text": "`/solace application`\n"
+          "text": "`/solace applications`\n"
                   + "Get all applications" 
         }, 
       },
@@ -471,7 +459,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn", 
-          "text": "`/solace application sort:ASC`\n"
+          "text": "`/solace applications sort:ASC`\n"
                   + "Get all applications sorted by ascending order of application name" 
         }, 
       },
@@ -479,7 +467,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn", 
-          "text": "`/solace application domain:\"EP-Integration\"`\n"
+          "text": "`/solace applications domain:\"EP-Integration\"`\n"
                   + "Get all applications in domain \"EP-Integration\"" 
         }, 
       },
@@ -487,8 +475,8 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn",
-          "text": '`/solace application name:\"EP-Integration-App\"`\n'
-                  + "Get application by name \"EP-Integration-App\" " 
+          "text": '`/solace applications name:\"EP-Integration-Application\"`\n'
+                  + "Get application by name \"EP-Integration-Application\" " 
 
         },
       },
@@ -496,8 +484,8 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn",
-          "text": '`/solace application name:\"EP-Integration-App\" domain:"EP-Integration"`\n'
-                  + "Get application by name \"EP-Integration-App\" in domain \"EP-Integraion\" " 
+          "text": '`/solace applications name:\"EP-Integration-Application\" domain:"EP-Integration"`\n'
+                  + "Get application by name \"EP-Integration-Application\" in domain \"EP-Integration\" " 
 
         },
       },
@@ -521,7 +509,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn", 
-          "text": "`/solace event`\n"
+          "text": "`/solace events`\n"
                   + "Get all events" 
         }, 
       },
@@ -529,7 +517,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn", 
-          "text": "`/solace event shared:true`\n"
+          "text": "`/solace events shared:true`\n"
                   + "Get all shared events" 
         }, 
       },
@@ -537,7 +525,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn", 
-          "text": "`/solace event sort:ASC`\n"
+          "text": "`/solace events sort:ASC`\n"
                   + "Get all events sorted by ascending order of event name" 
         }, 
       },
@@ -545,15 +533,15 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn", 
-          "text": "`/solace event domain:\"EP-Integration\"`\n"
-                  + "Get all events in domain \"EP-Integration\"" 
+          "text": "`/solace events shared:false domain:\"EP-Integration\"`\n"
+                  + "Get all events that are not shared in domain \"EP-Integration\"" 
         }, 
       },
       {
         "type": "section",
         text: {
           "type": "mrkdwn",
-          "text": '`/solace event name:\"EP-Integration-Event\"`\n'
+          "text": '`/solace events name:\"EP-Integration-Event\"`\n'
                   + "Get event by name \"EP-Integration-Event\" " 
 
         },
@@ -578,7 +566,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn", 
-          "text": "`/solace schema`\n"
+          "text": "`/solace schemas`\n"
                   + "Get all schemas" 
         }, 
       },
@@ -586,7 +574,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn", 
-          "text": "`/solace schema shared:true`\n"
+          "text": "`/solace schemas shared:true`\n"
                   + "Get all shared schemas" 
         }, 
       },
@@ -594,15 +582,15 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn", 
-          "text": "`/solace schema sort:ASC`\n"
-                  + "Get all schemas sorted by ascending order of schema name" 
+          "text": "`/solace schemas shared:true sort:DESC`\n"
+                  + "Get all shared schemas sorted by descending order of schema name" 
         }, 
       },
       {
         "type": "section",
         text: {
           "type": "mrkdwn", 
-          "text": "`/solace schema domain:\"EP-Integration\"`\n"
+          "text": "`/solace schemas domain:\"EP-Integration\"`\n"
                   + "Get all schemas in domain \"EP-Integration\"" 
         }, 
       },
@@ -610,7 +598,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         "type": "section",
         text: {
           "type": "mrkdwn",
-          "text": '`/solace schema name:\"EP-Integration-Schemas\"`\n'
+          "text": '`/solace schemas name:\"EP-Integration-Schema\"`\n'
                   + "Get schema by name \"EP-Integration-Schema\" " 
 
         },
