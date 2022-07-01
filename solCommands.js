@@ -69,7 +69,7 @@ const getSolaceApplicationVersions = async (applicationId, solaceCloudToken, opt
   let response = undefined;
   if (!options.hasOwnProperty('versionId'))
     response = await ep.getApplicationVersions(applicationId, params);
-  else if (mode === 'id')
+  else
     response = await ep.getApplicationVersionByID(options.versionId, params);
   results = {data: results.concat(response.data), meta: response.meta};
 
@@ -134,72 +134,6 @@ const getSolaceApplicationVersions = async (applicationId, solaceCloudToken, opt
   }
   return results;
 }
-
-// const getSolaceApplicationEvents = async (applicationId, solaceCloudToken, options=null) => {
-//   let results = [];
-//   let params = new URLSearchParams();
-//   const ep = new EventPortal(solaceCloudToken.token);
-
-//   // params.append('id', applicationId);
-
-//   if (options.hasOwnProperty('pageSize')) params.append('pageSize', options.pageSize);
-//   if (options.hasOwnProperty('pageNumber')) params.append('pageNumber', options.pageNumber);
-
-//   let response = await ep.getApplicationVersions(applicationId, params);
-//   results = {data: results.concat(response.data), meta: response.meta};
-
-//   let application = undefined;
-//   if (results.data.length > 0) {
-//     response = await ep.getApplicationByID(applicationId);
-//     application = response.data;
-//   } 
-
-//   for (let i=0; i<results.data.length; i++) {
-//     results.data[i].applicationDomainId = options?.domainId;
-//     results.data[i].domainName = options?.domainName;
-//     results.data[i].application = application;
-//   }
-
-//   let events = {};
-//   let eventVersions = {};
-//   for (let i=0; i<results.data.length; i++) {
-//     if (results.data[i].declaredProducedEventVersionIds) {
-//       for (let j=0; j<results.data[i].declaredProducedEventVersionIds.length; j++) {
-//         if (!eventVersions[results.data[i].declaredProducedEventVersionIds[j]]) {
-//           response = await ep.getEventVersionByID(results.data[i].declaredProducedEventVersionIds[j]);
-//           eventVersions[results.data[i].declaredProducedEventVersionIds[j]] = response.data;
-//         }
-//         if (!events[eventVersions[results.data[i].declaredProducedEventVersionIds[j]].eventId]) {
-//           response = await ep.getEventByID(eventVersions[results.data[i].declaredProducedEventVersionIds[j]].eventId);
-//           events[eventVersions[results.data[i].declaredProducedEventVersionIds[j]].eventId] = response.data; 
-//         }
-//       }
-//     }
-//     if (results.data[i].declaredConsumedEventVersionIds) {
-//       for (let j=0; j<results.data[i].declaredConsumedEventVersionIds.length; j++) {
-//         if (!eventVersions[results.data[i].declaredConsumedEventVersionIds[j]]) {
-//           response = await ep.getEventVersionByID(results.data[i].declaredConsumedEventVersionIds[j]);
-//           eventVersions[results.data[i].declaredConsumedEventVersionIds[j]] = response.data;
-//         }
-//         if (!events[eventVersions[results.data[i].declaredConsumedEventVersionIds[j]].eventId]) {
-//           response = await ep.getEventByID(eventVersions[results.data[i].declaredConsumedEventVersionIds[j]].eventId);
-//           events[eventVersions[results.data[i].declaredConsumedEventVersionIds[j]].eventId] = response.data; 
-//         }
-//       }
-//     }
-//   }
-
-//   let domains = {};
-//   let keys = Object.keys(events);
-//   for (let i=0; i<keys.length; i++) {
-//     if (!domains[events[keys[i]].applicationDomainId])
-//       domains[events[keys[i]].applicationDomainId] = await ep.getApplicationDomainName(events[keys[i]].applicationDomainId);
-//     events[keys[i]].domainName = domains[events[keys[i]].applicationDomainId]
-//   }
-
-//   results = {data: Object.values(events), meta: results.meta};
-//   return results;
-// }
 
 const getSolaceApplicationEvents = async (applicationId, solaceCloudToken, options=null) => {
   let results = await getSolaceApplicationResources(applicationId, solaceCloudToken, options);
@@ -426,7 +360,7 @@ const getSolaceSchemas = async (mode, solaceCloudToken, options=null) => {
     results = {data: results.concat(response.data), meta: response.meta};
   } else if (mode === 'id') {
     let response = await ep.getSchemaByID(options.id, params);
-    results = results.concat(response.data);
+    results = {data: results.concat(response.data), meta: response.meta};
   }
 
   let domains = {};

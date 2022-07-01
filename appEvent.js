@@ -272,6 +272,7 @@ const appLinkSharedEvent = async({event, context, payload}) => {
         }   
       }
     } catch (error) {
+      console.log(error);
       errorBlock = [
         {
           type: "section",
@@ -297,21 +298,23 @@ const appLinkSharedEvent = async({event, context, payload}) => {
         });
       else {
         if (checkArrayOfArrays(resultBlock)) {
-          for (let j=0; j<resultBlock.length; j++) {
-          
-            let unfurls = {};
-            unfurls[payload.links[i].url] = {
-              blocks: resultBlock[j]
-            }
-                  
-            await app.client.chat.unfurl({
-              token: process.env.SLACK_BOT_TOKEN,
-              ts: event.message_ts,
-              channel: payload.channel,
-              unfurls: JSON.stringify(unfurls),
-              text: 'Unfurl successful'
-            });
+          let finalBlocks = [];
+
+          for (let j=0; j<resultBlock.length; j++)
+            finalBlocks = finalBlocks.concat(resultBlock[j]);        
+
+          let unfurls = {};
+          unfurls[payload.links[i].url] = {
+            blocks: finalBlocks
           }
+
+          await app.client.chat.unfurl({
+            token: process.env.SLACK_BOT_TOKEN,
+            ts: event.message_ts,
+            channel: payload.channel,
+            unfurls: JSON.stringify(unfurls),
+            text: 'Unfurl successful'
+          });            
         } else {          
           let unfurls = {};
           unfurls[payload.links[i].url] = {

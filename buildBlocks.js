@@ -67,6 +67,18 @@ const buildDomainBlocks = (results, domain, next=null) => {
 
   for (let i = 0; i < results.length; i++) {
     let block = [];
+    if (i === 0 && next.meta && next.meta.pagination && next.meta.pagination.pageNumber === 1) {
+      block = block.concat([
+        {
+          type: "section",
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "_" + next.meta.pagination.count + " Domains(s) found!" + "_"
+          },
+      }]);
+    }
+
     block = block.concat([
       {
         type: "section",
@@ -232,6 +244,18 @@ const buildApplicationBlocks = (results, domain, next=null) => {
 
   for (let i = 0; i < results.length; i++) {
     let block = [];
+    if (i === 0 && next.meta && next.meta.pagination && next.meta.pagination.pageNumber === 1) {
+      block = block.concat([
+        {
+          type: "section",
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "_" + next.meta.pagination.count + " Applications(s) found!" + "_"
+          },
+      }]);
+    }
+
     block = block.concat([
       {
         type: "section",
@@ -400,6 +424,17 @@ const buildApplicationVersionBlocks = (results, domain, next=null) => {
 
   for (let i = 0; i < results.length; i++) {
     let block = [];
+    if (i === 0 && next.meta && next.meta.pagination && next.meta.pagination.pageNumber === 1) {
+      block = block.concat([
+        {
+          type: "section",
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "_" + next.meta.pagination.count + " Application Version(s) found!" + "_"
+          },
+      }]);
+    }
 
     let desc = (results[i].description ? results[i].description.split(/\r?\n/) : []);
     if (results[i].description)
@@ -426,6 +461,41 @@ const buildApplicationVersionBlocks = (results, domain, next=null) => {
           },
         ]
       },
+    ]);
+
+    block = block.concat([
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Application:*"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains/" + results[i].application.applicationDomainId 
+                          + "/applications?selectedId=" + results[i].applicationId
+                          + "|" + results[i].application.name + ">",
+          },
+        ]
+      },
+    ]);
+
+    block = block.concat([
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Domain:*"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains/"
+                          + "?selectedDomainId=" + results[i].application.applicationDomainId  + "|" + results[i].domainName + ">",
+          },
+        ]
+      }
     ]);
 
     if (results[i].declaredProducedEventVersionIds.length) {
@@ -502,41 +572,6 @@ const buildApplicationVersionBlocks = (results, domain, next=null) => {
         ]);  
       }      
     }    
-
-    block = block.concat([
-      {
-        type: "section",
-        fields: [
-          {
-            type: "mrkdwn",
-            text: "*Domain:*"
-          },
-          {
-            type: "mrkdwn",
-            text: "<https://" + domain + "/ep/designer/domains/"
-                          + "?selectedDomainId=" + results[i].application.applicationDomainId  + "|" + results[i].domainName + ">",
-          },
-        ]
-      }
-    ]);
-
-    block = block.concat([
-      {
-        type: "section",
-        fields: [
-          {
-            type: "mrkdwn",
-            text: "*Application:*"
-          },
-          {
-            type: "mrkdwn",
-            text: "<https://" + domain + "/ep/designer/domains/" + results[i].application.applicationDomainId 
-                          + "/applications?selectedId=" + results[i].applicationId
-                          + "|" + results[i].application.name + ">",
-          },
-        ]
-      },
-    ]);
 
     block = block.concat({
       "type": "context",
@@ -615,6 +650,18 @@ const buildApplicationEventBlocks = (results, domain, next=null) => {
 
   for (let i = 0; i < results.length; i++) {
     let block = [];
+    if (i === 0 && next.meta && next.meta.pagination && next.meta.pagination.pageNumber === 1) {
+      block = block.concat([
+        {
+          type: "section",
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "_" + next.meta.pagination.count + " Application Event(s) found!" + "_"
+          },
+      }]);
+    }
+
     let schemaDesc = "";
     if (results[i].schemaVersion && results[i].schemaVersion.description) {
       let schemaDescArr = (results[i].schemaVersion.description ? results[i].schemaVersion.description.split(/\r?\n/) : []);
@@ -789,6 +836,20 @@ const buildApplicationSchemaBlocks = (results, domain, next=null) => {
 
   for (let i = 0; i < results.length; i++) {
     let block = [];
+    if (i === 0 && next.meta && next.meta.pagination && next.meta.pagination.pageNumber === 1) {
+      block = block.concat([
+        {
+          type: "section",
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": (next.meta.pagination.count === 1) ? 
+                        "_" + next.meta.pagination.count + " Application Schema references(s) found!"  + "_" :
+                        "_" + next.meta.pagination.count + " Application Schema references(s) found! Here are the distinct schema(s)" + "_"
+          },
+      }]);
+    }
+
     let schemaDesc = "";
     if (results[i].schemaVersion && results[i].schemaVersion.description) {
       let schemaDescArr = (results[i].schemaVersion.description ? results[i].schemaVersion.description.split(/\r?\n/) : []);
@@ -973,6 +1034,17 @@ const buildEventBlocks = (results, domain, next=null) => {
 
   for (let i = 0; i < results.length; i++) {
     let block = [];
+    if (i === 0 && next.meta && next.meta.pagination && next.meta.pagination.pageNumber === 1) {
+      block = block.concat([
+        {
+          type: "section",
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "_" + next.meta.pagination.count + " Events(s) found!" + "_"
+          },
+      }]);
+    }
 
     block = block.concat([
       {
@@ -1134,6 +1206,18 @@ const buildEventVersionBlocks = (results, domain, next=null) => {
     desc = desc.length ? desc.join("\n") : ""
 
     let block = [];
+    if (i === 0 && next.meta && next.meta.pagination && next.meta.pagination.pageNumber === 1) {
+      block = block.concat([
+        {
+          type: "section",
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "_" + next.meta.pagination.count + " Event Version(s) found!" + "_"
+          },
+      }]);
+    }
+
     block = block.concat([
       {
         type: "section",
@@ -1155,21 +1239,23 @@ const buildEventVersionBlocks = (results, domain, next=null) => {
       },
     ]);
 
-    blocks.push({
-      type: "section",
-      fields: [
-        {
-          type: "mrkdwn",
-          text: "*Event:*"
-        },
-        {
-          type: "mrkdwn",
-          text: "<https://" + domain + "/ep/designer/domains/" 
-                    + results[i].applicationDomainId  + "/events?selectedId=" + results[i].eventId 
-                    + "|" + results[i].event.name + ">"
-        },
-      ]
-    });
+    block = block.concat([
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: "*Event:*"
+          },
+          {
+            type: "mrkdwn",
+            text: "<https://" + domain + "/ep/designer/domains/" 
+                      + results[i].applicationDomainId  + "/events?selectedId=" + results[i].eventId 
+                      + "|" + results[i].event.name + ">"
+          },
+        ]
+      }
+    ]);
     
 
     if (results[i].schema) {
@@ -1354,6 +1440,18 @@ const buildSchemaBlocks = (results, domain, next=null) => {
 
   for (let i = 0; i < results.length; i++) {
     let block = [];
+    if (i === 0 && next.meta && next.meta.pagination && next.meta.pagination.pageNumber === 1) {
+      block = block.concat([
+        {
+          type: "section",
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "_" + next.meta.pagination.count + " Schema(s) found!" + "_"
+          },
+      }]);
+    }
+
     block = block.concat([
       {
         type: "section",
@@ -1518,24 +1616,16 @@ const buildSchemaVersionBlocks = (results, domain, next=null) => {
 
   for (let i = 0; i < results.length; i++) {
     let block = [];
-    if (results[i].schema) {
+    if (i === 0 && next.meta && next.meta.pagination && next.meta.pagination.pageNumber === 1) {
       block = block.concat([
         {
           type: "section",
-          fields: [
-            {
-              type: "mrkdwn",
-              text: "*Schema:*"
-            },
-            {
-              type: "mrkdwn",
-              text: "<https://" + domain + "/ep/designer/domains/" 
-                      + results[i].applicationDomainId  + "/schemas?selectedId=" + results[i].schemaId
-                      + "|" + results[i].schema.name + ">"
-            },
-          ]
-        },
-      ]);
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "_" + next.meta.pagination.count + " Schema Version(s) found!" + "_"
+          },
+      }]);
     }
 
     let desc = (results[i].description ? results[i].description.split(/\r?\n/) : []);
@@ -1564,7 +1654,26 @@ const buildSchemaVersionBlocks = (results, domain, next=null) => {
       },
     ]);
 
-    // FIX
+    if (results[i].schema) {
+      block = block.concat([
+        {
+          type: "section",
+          fields: [
+            {
+              type: "mrkdwn",
+              text: "*Schema:*"
+            },
+            {
+              type: "mrkdwn",
+              text: "<https://" + domain + "/ep/designer/domains/" 
+                      + results[i].applicationDomainId  + "/schemas?selectedId=" + results[i].schemaId
+                      + "|" + results[i].schema.name + ">"
+            },
+          ]
+        },
+      ]);
+    }
+    
     if (results[i].referencedByEventVersionIds && results[i].referencedByEventVersionIds.length) {
       let fields = [{ 
         "type": "mrkdwn", 

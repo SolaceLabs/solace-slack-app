@@ -696,8 +696,6 @@ class EventPortal {
         console.log(`Fetching Domains`)
         let url = `applicationDomains/${domainId}`
         url = url + (params ? `?${params}` : '');
-
-        console.log('getApplicationDomainByID Endpoint', url);
         const response = await this.api(this.token, 'GET', url, null)
         return response;
     } catch (error) {

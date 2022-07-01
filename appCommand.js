@@ -105,6 +105,12 @@ const isValidSolaceCommand = async (command, solaceCloudToken) => {
       cmd['name'] = stripQuotes(nextArg);
     } else if (subArgs[0] === 'domain') {
       cmd['domain'] = nextArg;
+      if (cmd.resource === 'domains') {
+        cmd.error = 'Unsupported parameter `' + subArgs[0] + '`';
+        cmd.valid = false;
+        return cmd;
+      }
+
       if (solaceCloudToken) {
         cmd['domainId'] =  await getApplicationDomainId(cmd.domain, solaceCloudToken);
         if (!cmd['domainId']) {
@@ -121,9 +127,19 @@ const isValidSolaceCommand = async (command, solaceCloudToken) => {
         console.log(cmd.error);
         return cmd;
       }
-    
+      if (cmd.resource === 'domains' || cmd.resource === 'applications') {
+        cmd.error = 'Unsupported parameter `' + subArgs[0] + '`';
+        cmd.valid = false;
+        return cmd;
+      }
+
       cmd['shared'] = nextArg.toUpperCase();
     } else if (subArgs[0] === 'sort') {
+      if (cmd.resource === 'domains') {
+        cmd.error = 'Unsupported parameter `' + subArgs[0] + '`';
+        cmd.valid = false;
+        return cmd;
+      }
       if (!sortArgs.includes(nextArg)) {
         cmd.error = 'Invalid value for `' + subArgs[0] + '`';
         cmd.valid = false;
@@ -407,7 +423,7 @@ const solaceSlashCommand = async({ack, payload, context}) => {
     // });
 
   } catch (error) {
-    console.error("CAUGHT ERROR: ", error);
+    console.error(error);
     errorBlock = [
       {
         type: "section",
