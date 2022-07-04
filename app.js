@@ -1,4 +1,4 @@
-const { App, LogLevel } = require("@slack/bolt");
+const { App } = require("@slack/bolt");
 const { echoSlashCommand, solaceSlashCommand } = require('./appCommand');
 const { appHomeOpenedEvent, appLinkSharedEvent } = require('./appEvent');
 const { helloMessage } = require('./appMessage');
@@ -16,6 +16,17 @@ const app = new App({
   // logLevel: LogLevel.DEBUG,
   appToken: process.env.APP_TOKEN,
   port: process.env.PORT || 4000,
+  customRoutes: [
+    {
+      path: '/',
+      method: ['GET'],
+      handler: (req, res) => {
+        res.writeHead(200);
+        res.end('Hello World! This is Solace-Slack Integration App.');
+      },
+    },
+  ],
+
 });
 
 app.command('/echo', echoSlashCommand);
@@ -29,7 +40,6 @@ app.message('hello', helloMessage);
 app.action('block_actions', fetchDependentResources);
 app.action('click_authorize', authorizeEPTokenAction);
 app.action('click_show_help', showHelpAction);
-// app.action('click_get_more', fetchDependentResources);
 app.action('click_get_more', getMoreResources);
 
 app.action('click_examples_domains', showExamplesAction);
