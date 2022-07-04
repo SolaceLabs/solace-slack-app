@@ -21,7 +21,6 @@ const modalView = async ({ ack, body, context, view }) => {
     let solaceCloudToken = db.getData(`/${body.user.id}/data`);
     solaceCloudToken[body.user.id] = data;
     db.save();
-
   } catch(error) {
     // ignore
   }

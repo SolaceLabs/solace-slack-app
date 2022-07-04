@@ -38,28 +38,6 @@ const getMoreResources = async({ body, context, ack }) => {
   let cmd = next.cmd;
   let options = next.options;
 
-  let solaceCloudToken = undefined;
-  try {
-    db.reload();
-    solaceCloudToken = db.getData(`/${body.user.id}/data`);
-  } catch(error) {
-    console.error(error); 
-  }
-
-
-  let blocks = [
-    {
-      type: "divider"
-    },
-    {
-      "type": "section",
-      text: {
-        type: "mrkdwn",
-        "text": "*Application Domains*"
-      },
-    },
-  ];
-
   let emptyBlock = [
     {
       type: "section",
@@ -75,7 +53,11 @@ const getMoreResources = async({ body, context, ack }) => {
   let resultBlock = [];
   let errorBlock = null;
   let response = undefined;
+  let solaceCloudToken = undefined;
   try {
+    db.reload();
+    solaceCloudToken = db.getData(`/${body.user.id}/data`);
+
     if ((cmd.resource === 'domains')) {
       if (cmd.scope === 'name') options.name = cmd.name;
       if (cmd.scope === 'id') options.id = cmd.id;
@@ -251,23 +233,19 @@ const showExamplesAction = async({ body, context, ack }) => {
 const authorizeEPTokenAction = async({ body, context, ack }) => {
   console.log('action:authorizeEPTokenAction');
   const { app, cache } = require('./app')
+  cache.set('channelId', body.channel.id, 60);
 
   ack();
   
   const appHome = require('./appHome');
+
   let solaceCloudToken = undefined;
   try {
     db.reload();
     solaceCloudToken = db.getData(`/${body.user.id}/data`);
-  } catch(error) {
-    // ignore
-  }
 
-  cache.set('channelId', body.channel.id, 60);
+    const view = appHome.openModal(solaceCloudToken);
 
-  const view = appHome.openModal(solaceCloudToken);
-  
-  try {
     await app.client.views.open({
       token: process.env.SLACK_BOT_TOKEN,
       trigger_id: body.trigger_id,
@@ -293,19 +271,6 @@ const fetchDependentResources = async({ ack, body, respond }) => {
   let domainId = data[3] ? data[3] : undefined;
   let domainName = data[4] ? data[4] : undefined;
   let resource = "Unknown";
-  console.log('action:block_actions');
-
-  let solaceCloudToken = undefined;
-  try {
-    solaceCloudToken = db.getData(`/${body.user.id}/data`);
-  } catch(error) {
-    console.error(error); 
-  }
-
-  if (!solaceCloudToken) {
-    await postRegisterMessage(body.channel.id, body.user.id);
-    return;
-  }
 
   let actionDescription = 'Not Known';
   if (action === 'getdomainapplications') {
@@ -375,7 +340,14 @@ const fetchDependentResources = async({ ack, body, respond }) => {
 
   let resultBlock = [];
   let errorBlock = null;
+  let solaceCloudToken = undefined;
   try {
+    solaceCloudToken = db.getData(`/${body.user.id}/data`);
+    if (!solaceCloudToken) {
+      await postRegisterMessage(body.channel.id, body.user.id);
+      return;
+    }
+
     await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
       ts: body.container.message_ts,
@@ -453,15 +425,6 @@ const fetchDependentResources = async({ ack, body, respond }) => {
       else
         resultBlock = buildSchemaVersionBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});
     }
-
-    // await app.client.chat.postMessage({
-    //   token: process.env.SLACK_BOT_TOKEN,
-    //   ts: body.container.message_ts,
-    //   channel: body.channel.id,
-    //   "blocks": successBlock,
-    //   text: 'Message from Solace App'
-    // });
-
   } catch (error) {
     console.error(error);
     errorBlock = [
@@ -537,19 +500,16 @@ const modifyEPTokenAction = async({ body, context, ack }) => {
   ack();
   
   const appHome = require('./appHome');
-  let solaceCloudToken = undefined;
-  try {
-    db.reload();
-    solaceCloudToken = db.getData(`/${body.user.id}/data`);
-  } catch(error) {
-    // ignore
-  }
 
   // Open a modal window with forms to be submitted by a user
   const view = appHome.openModal(solaceCloudToken);
   
+  let solaceCloudToken = undefined;
   try {
-    const result = await app.client.views.open({
+    db.reload();
+    solaceCloudToken = db.getData(`/${body.user.id}/data`);
+
+    await app.client.views.open({
       token: process.env.SLACK_BOT_TOKEN,
       trigger_id: body.trigger_id,
       view: view
