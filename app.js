@@ -11,7 +11,7 @@ require("dotenv").config();
 const receiver = new ExpressReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET
 });
-receiver.router.get("/hello", (req, res) => res.send('Hello World! This is Solace-Slack Integration App.'))
+receiver.router.get("/", (req, res) => res.send('Hello World! This is Solace-Slack Integration App.'))
 
 // Initializes your app with your bot token and signing secret
 const app = new App({
@@ -49,7 +49,7 @@ app.view('modal_view', modalView);
 (async () => {
   // Start your app
   await app.start();
-  await receiver.start(process.env.PORT || 4000);
+  await receiver.start();
 
   console.log('⚡️ Bolt app is running!');
 })();
