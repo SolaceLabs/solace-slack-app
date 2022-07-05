@@ -20,11 +20,11 @@ const app = new App({
 const receiver = new ExpressReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET
 });
-receiver.router.get("/", (req, res) => {
+receiver.router.get("/", async (req, res) => {
   if (cache.get('started')) {
     try {
       // Call chat.scheduleMessage with the built-in client
-      const result = await client.chat.postMessage({
+      await app.client.chat.postMessage({
         channel: "C03NASC7YD8",
         text: 'Keepalive Ping @ ' + (new Date()).toUTCString()
       });
