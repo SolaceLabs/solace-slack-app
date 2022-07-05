@@ -25,6 +25,7 @@ receiver.router.get("/", async (req, res) => {
     try {
       // Call chat.scheduleMessage with the built-in client
       await app.client.chat.postMessage({
+        token: process.env.SLACK_BOT_TOKEN,
         channel: "C03NASC7YD8",
         text: 'Keepalive Ping @ ' + (new Date()).toUTCString()
       });
