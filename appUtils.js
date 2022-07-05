@@ -15,11 +15,27 @@ const postAlreadyRegisteredMessage = async (channel, user) => {
           type: "divider"
         },
         {
-          type: "section",
+          "type": "section",
           text: {
             type: "mrkdwn",
-            text: ":thumbsup: *You have already registered, you're all set!*\n\n"
+            "text": ":thumbsup: *You have already registered, you're all set!*\n\n"
           },
+        },
+        {
+          "type": "section",
+          text: {
+            type: "mrkdwn",
+            "text": "Do you want to update the API Token?"
+          },
+          "accessory": {
+            "type": "button",
+            "text": {
+              "type": "plain_text",
+              "emoji": true,
+              "text": "Update"
+            },
+            action_id: "add_token"
+          }    
         },
         {
           type: "divider"
@@ -281,33 +297,33 @@ const showHelp = async(userId, channelId) => {
         },
       ]
     },        
-    // {
-    //   type: "divider"
-    // },
+    {
+      type: "divider"
+    },
 
-    // {
-    //   "type": "section",
-    //   text: {
-    //     type: "mrkdwn",
-    //     "text": "*App Registration*"
-    //   },
-    // },
-    // {
-    //   "type": "section",
-    //   "fields": [
-    //     { 
-    //       "type": "mrkdwn", 
-    //       "text": "Register App" 
-    //     }, 
-    //     {
-    //       "type": "mrkdwn",
-    //       "text": "`/solace register`"
-    //     },
-    //   ]
-    // },
-    // {
-    //   type: "divider"
-    // },    
+    {
+      "type": "section",
+      text: {
+        type: "mrkdwn",
+        "text": "*App Registration*"
+      },
+    },
+    {
+      "type": "section",
+      "fields": [
+        { 
+          "type": "mrkdwn", 
+          "text": "Register/Update API Token" 
+        }, 
+        {
+          "type": "mrkdwn",
+          "text": "`/solace register`"
+        },
+      ]
+    },
+    {
+      type: "divider"
+    },    
 
     {
       "type": "section",

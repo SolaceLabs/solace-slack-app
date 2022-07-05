@@ -1,5 +1,7 @@
 const JsonDB = require('node-json-db').JsonDB;
 const db = new JsonDB('tokens', true, false);
+db.push('/dummy', 'dummy');
+
 const {
   getSolaceApplicationDomains,
   getSolaceApplications,
@@ -201,7 +203,6 @@ const solaceSlashCommand = async({ack, payload, context}) => {
     console.error(error); 
   }
 
-
   if (!solaceCloudToken) {
     await postRegisterMessage(payload.channel_id, payload.user_id);
     return;  
@@ -266,13 +267,8 @@ const solaceSlashCommand = async({ack, payload, context}) => {
     return;
   }
   if (cmd.resource === 'register') {
-    if (solaceCloudToken) {
-      await postAlreadyRegisteredMessage(payload.channel_id, payload.user_id);
-      return;  
-    }
-    console.log('command:showExamplesCommand');
-    await showExamples(payload.user_id, payload.channel_id);
-    return;
+    await postAlreadyRegisteredMessage(payload.channel_id, payload.user_id);
+    return;  
   }
 
   if (!solaceCloudToken) {

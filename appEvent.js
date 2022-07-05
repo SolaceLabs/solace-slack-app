@@ -1,5 +1,6 @@
 const JsonDB = require('node-json-db').JsonDB;
 const db = new JsonDB('tokens', true, false);
+db.push('/dummy', 'dummy');
 
 const {
   getSolaceApplicationDomains,
@@ -177,23 +178,22 @@ const appLinkSharedEvent = async({event, context, payload}) => {
 
   let resultBlock = [];
   let errorBlock = null;
+  let solaceCloudToken = undefined;
+  try {
+    db.reload();
+    solaceCloudToken = db.getData(`/${payload.user}/data`);
+  } catch(error) {
+    console.error(error); 
+  }
+
+  if (!solaceCloudToken) {
+    await postRegisterMessage(payload.channel, payload.user);
+    return;
+  }
 
   for (var i=0; i<payload.links.length; i++) {
     try {
       let cmd = parseSolaceLink(payload.links[i].url);
-      let solaceCloudToken = undefined;
-      try {
-        db.reload();
-        solaceCloudToken = db.getData(`/${payload.user}/data`);
-      } catch(error) {
-        console.error(error); 
-      }
-    
-      if (!solaceCloudToken) {
-        await postRegisterMessage(payload.channel, payload.user_id);
-        return;
-      }
-      
       const headerBlock = [
         {
           type: "divider"

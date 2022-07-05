@@ -1,5 +1,6 @@
 const JsonDB = require('node-json-db').JsonDB;
 const db = new JsonDB('tokens', true, false);
+db.push('/dummy', 'dummy');
 
 const updateView = async(user) => {
   console.log('updateView');

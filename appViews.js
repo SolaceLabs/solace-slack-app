@@ -1,5 +1,6 @@
 const JsonDB = require('node-json-db').JsonDB;
 const db = new JsonDB('tokens', true, false);
+db.push('/dummy', 'dummy');
 
 const modalView = async ({ ack, body, context, view }) => {
   console.log('view:modalView');
@@ -22,7 +23,7 @@ const modalView = async ({ ack, body, context, view }) => {
     solaceCloudToken[body.user.id] = data;
     db.save();
   } catch(error) {
-    // ignore
+    console.log(error);
   }
 
   const homeView = await appHome.createHome(body.user.id, data);

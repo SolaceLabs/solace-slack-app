@@ -1,5 +1,7 @@
 const JsonDB = require('node-json-db').JsonDB;
 const db = new JsonDB('tokens', true, false);
+db.push('/dummy', 'dummy');
+
 const {
   getSolaceApplicationDomains,
   getSolaceApplications,
@@ -25,6 +27,7 @@ const {
 } = require('./buildBlocks');
 const {
   postRegisterMessage,
+  postAlreadyRegisteredMessage,
   checkArrayOfArrays,
   showHelp,
   showExamples
@@ -57,7 +60,16 @@ const getMoreResources = async({ body, context, ack }) => {
   try {
     db.reload();
     solaceCloudToken = db.getData(`/${body.user.id}/data`);
+  } catch (error) {
+    console.log(error);
+  }
 
+  if (!solaceCloudToken) {
+    await postRegisterMessage(body.channel.id, body.user.id);
+    return;
+  }
+
+  try {
     if ((cmd.resource === 'domains')) {
       if (cmd.scope === 'name') options.name = cmd.name;
       if (cmd.scope === 'id') options.id = cmd.id;
@@ -238,14 +250,16 @@ const authorizeEPTokenAction = async({ body, context, ack }) => {
   ack();
   
   const appHome = require('./appHome');
-
   let solaceCloudToken = undefined;
   try {
     db.reload();
     solaceCloudToken = db.getData(`/${body.user.id}/data`);
+  } catch (error) {
+    console.log(error);
+  }
 
+  try {
     const view = appHome.openModal(solaceCloudToken);
-
     await app.client.views.open({
       token: process.env.SLACK_BOT_TOKEN,
       trigger_id: body.trigger_id,
@@ -342,12 +356,18 @@ const fetchDependentResources = async({ ack, body, respond }) => {
   let errorBlock = null;
   let solaceCloudToken = undefined;
   try {
+    db.reload();
     solaceCloudToken = db.getData(`/${body.user.id}/data`);
-    if (!solaceCloudToken) {
-      await postRegisterMessage(body.channel.id, body.user.id);
-      return;
-    }
+  } catch (error) {
+    console.log(error);
+  }
 
+  if (!solaceCloudToken) {
+    await postRegisterMessage(body.channel.id, body.user.id);
+    return;
+  }
+  
+  try {
     await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
       ts: body.container.message_ts,
@@ -501,10 +521,22 @@ const modifyEPTokenAction = async({ body, context, ack }) => {
   
   const appHome = require('./appHome');
 
+  let solaceCloudToken = undefined;
+  try {
+    db.reload();
+    solaceCloudToken = db.getData(`/${body.user.id}/data`);
+  } catch (error) {
+    console.log(error);
+  }
+
+  if (!solaceCloudToken) {
+    await postRegisterMessage(body.channel.id, body.user.id);
+    return;
+  }
+
   // Open a modal window with forms to be submitted by a user
   const view = appHome.openModal(solaceCloudToken);
   
-  let solaceCloudToken = undefined;
   try {
     db.reload();
     solaceCloudToken = db.getData(`/${body.user.id}/data`);
