@@ -9,6 +9,7 @@
 The Solace PubSub+ Event Portal integration for Slack gives you and your teams full visibility into your Event Portal resources right in Slack channels, where you can access information about your Application Domains, Applications, Events and Schemas. This integration is an open source project, built and maintained by _Solace-Labs_.
 
 ## Table of Contents
+- [<< IN WORK - NOT YET AVAILABLE ON SLACK APP DIRECTORY >>](#-in-work---not-yet-available-on-slack-app-directory-)
 - [Solace PubSub+ Event Portal + Slack Integration](#solace-pubsub-event-portal--slack-integration)
   - [About](#about)
   - [Table of Contents](#table-of-contents)
@@ -24,6 +25,8 @@ The Solace PubSub+ Event Portal integration for Slack gives you and your teams f
     - [Help](#help)
     - [Examples](#examples)
   - [Resources](#resources)
+      - [Solace Resources](#solace-resources)
+      - [Slack resources](#slack-resources)
   - [Contributing](#contributing)
   - [Authors](#authors)
   - [License](#license)
@@ -37,7 +40,7 @@ To generate a token, Click on the User icon at the bottom of the sidebar and cho
 
 <p align="center"><img width="450" alt="auth" src="images/token-management.jpg"></p>
 
-In the *Create Token* page, grant all permissions under _Event Portal_ -> _Designer Read_ group.
+In the *Create Token* page, grant permissions under _Event Portal_ -> _Designer Read_ group for the following options.
 
 <p align="center"><img width="450" alt="auth" src="images/token-permissions.jpg"></p>
 
@@ -46,14 +49,16 @@ Create the token and save it in a file, you would need to specify this token whe
 ### Installation
 [Install the Solace PubSub+ Event Portal integration for Slack](https://slack.com/apps/A01BP7R4KNY-github) [_needs update_]. After you've signed in to your Slack workspace, you will be prompted to give the app access:
 
-<p align="center"><img width="450" alt="auth" src="https://user-images.githubusercontent.com/3877742/36522927-f1d596b6-1753-11e8-9f85-2495e657b16b.png"><br/><i>[_needs update_]</i></p>
+<p align="center"><img width="450" alt="auth" src="images/install-app.jpg"><br/><i>[_needs update_]</i></p>
+
+Click on the _Allow_ button to complete the installation of the Solace PubSub+ Event Portal Integration app into your Slack workspace.
 
 After the app is installed, and once you've added the GitHub integration to the relevant channels using `/invite @solace` allowing the app to interact with your channel.
 
 ## Getting Started
 Once you install the app, you can not interact with Solace PubSub+ Event Portal app as a Personal app or access from a channel. Once the app is installed in the workspace, the Solace PubSub+ Event Portal app is enabled in all the public channels. For private channels, you need to explicitly invite `/invite @solace`
 
-At this point your Slack and Solace PubSub+ Event Portal is not linked. Invocation of a solace slash command `/solace` or `/solace xxxx`, uou will be prompted to register a valid Solace PubSub+ Cloud REST API token. 
+At this point your Slack and Solace PubSub+ Event Portal is not linked. Invocation of a solace slash command `/solace` or `/solace xxxx`, you will be prompted to register a valid Solace PubSub+ Cloud REST API token. 
 
 <p align="center"><img width="500" alt="Connect" src="images/token-regiser-prompt.jpg"></p>
 
@@ -66,7 +71,7 @@ Enter the token generated in the previous step for _Solace Cloud REST API Token_
 ## Features
 Once the App is installed and successfully, registered with Solace PubSub+ Event Portal REST API Token, you can invite the app to interact with a channel. You can access Event Portal resource with simple slash commands. For more details on the slash commands, refer to the [Help](#help) section. 
 
-The returned results are enriched with additional metrics around resource count, settings etc. and presented as slack messages. Further drill-down is supported to get contextual details around dependent resources; for example, Applications in a Domain, Versions of an Event etc.
+The returned results are enriched with additional metrics around resource count, settings etc. and presented as Slack messages. Further drill-down is supported to get contextual details around dependent resources; for example, Applications in a Domain, Versions of an Event etc.
 ### Slash commands
 
 The primary mode of Event Portal interaction is via slash commands. Following Event Portal resources can be queried through the Solace PubSub+ Event Portal app.
@@ -86,7 +91,7 @@ For more details on the syntax and options on the supported slash commands, refe
 
 ### Message interactions
 
-Each of the slack message generated as a result of slash command, represents an Event Portal resource. The messages are enriched with additional metrics around resource count, settings etc. as appropriate. Further drill-down is supported via a drop-down menu option containing list of dependent resources. For example, Applications in a Domain, Versions of an Event etc.
+Each of the Slack message generated as a result of slash command, represents an Event Portal resource. The messages are enriched with additional metrics around resource count, settings etc. as appropriate. Further drill-down is supported via a drop-down menu option containing list of dependent resources. For example, Applications in a Domain, Versions of an Event etc.
 
 - Application domains
   - Applications
@@ -116,13 +121,11 @@ One of the notable feature of Slack is the ability to unfurl and present a previ
 
 ### Paginated results
 
-Pagination is a process that is used to divide a large data into smaller discrete pages, with the ability to control the view via _Page Number_ and _Page Size_. The App takes a default size of 5 as _Page Size_, except for the initial query, where the first resource is presented along with a `Get all` button. 
-
-<p align="center"><img width="450" alt="auth" src="images/get-all.jpg"></p>
-
-Clicking the `Get all` would fetch the first page i.e., first batch of 5 results. At the end of each batch, a `Get more` button enables you to fetch remaining results.
+Pagination is a process that is used to divide a large data into smaller discrete pages, with the ability to control the view via _Page Number_ and _Page Size_. The App takes a default size of 5 as _Page Size_, except for the initial query, where the first resource is presented along with a `Get more (x)` button. 
 
 <p align="center"><img width="450" alt="auth" src="images/get-more.jpg"></p>
+
+Clicking the `Get more (6)` would fetch the next page i.e., next batch of 5 results. At the end of each batch, a `Get more (x)` button with _x_ indicating count of remaining results.
 
 Eventually, when all the results are returned the pagination ends as there will be no `Get more` button.
 
@@ -146,24 +149,22 @@ Here is a set of examples for each of the supported slash command.
 
 For more information try these resources:
 
-- The Solace Developer Portal website at: https://solace.dev
+#### Solace Resources
+- Event Portal 2.0 [Overview](https://docs.solace.com/Cloud/Event-Portal/event-portal-overview.htm)
+- Event Portal Open API v2 - [Early Access](https://openapi-v2.solace.cloud/)
 - Ask the [Solace Community](https://solace.community)
-<p align="center">[_needs update_]</p>
 
+#### Slack resources
+Getting started with [Bolt for JavaScript](https://slack.dev/bolt-js/tutorial/getting-started)
 
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
-<p align="center">[_needs update_]</p>
-
 ## Authors
 
 See the list of [contributors](https://github.com/solacecommunity/<github-repo>/graphs/contributors) who participated in this project.
 
-<p align="center">[_needs update_]</p>
-
 ## License
 
 See the [LICENSE](LICENSE) file for details.
-<p align="center">[_needs update_]</p>
