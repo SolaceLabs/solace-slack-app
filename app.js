@@ -8,11 +8,6 @@ const NodeCache = require( "node-cache" );
 const cache = new NodeCache();
 require("dotenv").config();
 
-const receiver = new ExpressReceiver({
-  signingSecret: process.env.SLACK_SIGNING_SECRET
-});
-receiver.router.get("/", (req, res) => res.send('Hello World! This is Solace-Slack Integration App.'))
-
 // Initializes your app with your bot token and signing secret
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
@@ -22,7 +17,25 @@ const app = new App({
   port: process.env.PORT || 4000,
 });
 
-app.setC
+const receiver = new ExpressReceiver({
+  signingSecret: process.env.SLACK_SIGNING_SECRET
+});
+receiver.router.get("/", (req, res) => {
+  if (cache.get('started')) {
+    try {
+      // Call chat.scheduleMessage with the built-in client
+      const result = await client.chat.postMessage({
+        channel: "C03NASC7YD8",
+        text: 'Keepalive Ping @ ' + (new Date()).toUTCString()
+      });
+    }
+    catch (error) {
+      console.log(error);
+    }
+  }
+
+  res.send('Hello World! This is Solace-Slack Integration App.')
+})
 
 app.command('/echo', echoSlashCommand);
 app.command('/solace', solaceSlashCommand);
@@ -50,7 +63,7 @@ app.view('modal_view', modalView);
   // Start your app
   await app.start();
   await receiver.start(process.env.PORT || 4000);
-
+  cache.set('started', true);
   console.log('⚡️ Bolt app is running!');
 })();
 
