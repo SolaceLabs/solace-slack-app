@@ -34,9 +34,9 @@ The Solace PubSub+ Event Portal integration for Slack gives you and your teams f
 --------
 ## Installing the Solace PubSub+ Event Portal integration for Slack
 ### Requirements
-This app supports access to Solace PubSub+ Event Portal using via Slack. You must have a Solace PubSub+ Cloud subscription and an API tokens with the following permissions.
+This app supports access to Solace PubSub+ Event Portal using Slack. You must have a Solace PubSub+ Cloud subscription and an API token with the following permissions.
 
-To generate a token, Click on the User icon at the bottom of the sidebar and choose _Token Management_
+To generate a token, click on the User icon at the bottom of the sidebar and choose _Token Management_
 
 <p align="center"><img width="450" alt="auth" src="images/token-management.jpg"></p>
 
@@ -53,7 +53,7 @@ Create the token and save it in a file, you would need to specify this token whe
 
 Click on the _Allow_ button to complete the installation of the Solace PubSub+ Event Portal Integration app into your Slack workspace.
 
-After the app is installed, and once you've added the GitHub integration to the relevant channels using `/invite @solace` allowing the app to interact with your channel.
+After the app is installed, and once you've added the Solace integration to the relevant channels use `/invite @solace` allowing the app to interact with your channel.
 
 ## Getting Started
 Once you install the app, you can not interact with Solace PubSub+ Event Portal app as a Personal app or access from a channel. Once the app is installed in the workspace, the Solace PubSub+ Event Portal app is enabled in all the public channels. For private channels, you need to explicitly invite `/invite @solace`

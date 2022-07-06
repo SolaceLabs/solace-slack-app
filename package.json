@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js > slackapp.log 2>slackapp.log"
   },
   "keywords": [],
   "author": "",
@@ -14,10 +14,10 @@
     "@slack/bolt": "^3.3.0",
     "@solace-community/eventportal": "^1.1.0",
     "axios": "^0.27.2",
+    "dotenv": "^8.6.0",
     "node-cache": "^5.1.2",
     "node-json-db": "^1.5.0",
-    "nodemon": "^2.0.16",
-    "dotenv": "^8.6.0"
+    "nodemon": "^2.0.16"
   },
   "engines": {
     "node": "18.x"

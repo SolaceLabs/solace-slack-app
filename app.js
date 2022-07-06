@@ -4,6 +4,7 @@ const { appHomeOpenedEvent, appLinkSharedEvent } = require('./appEvent');
 const { helloMessage } = require('./appMessage');
 const { fetchDependentResources, authorizeEPTokenAction, modifyEPTokenAction, getMoreResources, showHelpAction, showExamplesAction } = require('./appActions');
 const { modalView } = require('./appViews');
+
 const NodeCache = require( "node-cache" );
 const cache = new NodeCache();
 require("dotenv").config();
@@ -31,7 +32,7 @@ receiver.router.get("/", async (req, res) => {
       });
     }
     catch (error) {
-      console.log(error);
+      console.error(error);
     }
   }
 
