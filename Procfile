@@ -1,2 +1,0 @@
-worker: npm run dev
-
