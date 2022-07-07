@@ -1,50 +1,5 @@
 const states = { 1: "Draft", 2: "Released", 3: "Deprecated", 4: "Retired" }
 
-const constructErrorUnfurl = (error) => {
-  let blocks = [
-    {
-      type: "divider"
-    },
-    {
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: "*Discover, Visualize and Catalog Your Event Streams With PubSub+ Event Portal*\n\n\n"
-      },
-    },
-    {
-      type: "divider"
-    },
-    {
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": ":boom: Hey there 👋 I'm SolaceBot. Could not process your request due to _`"
-                  + error + "`_. Sorry about that!"
-                  + "\n\n\nIt could be due to following reasons:"
-      }
-    },
-    {
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": "*:one:* The link is not a valid Solace Event Portal link from domains _`solace-sso.solace.cloud`_ or _`console.solace.cloud`_"
-      }
-    },
-    {
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": "*:two:* The link is from *v1.0 Event Portal*." 
-                + " Ensure that the links are from a *v2.0* Event Portal.\n\n\n"
-                + " :bulb: To enable *v2.0*, go to Event Portal *Home* and turn _*on*_ the *New Event Portal 2.0* option."
-      }
-    },
-  ]
-
-  return blocks;
-}
-
 const buildDomainBlocks = (results, domain, next=null) => {
   let blocks = [];
   let getString = undefined;
@@ -1772,7 +1727,6 @@ const buildSchemaVersionBlocks = (results, domain, next=null) => {
 }
 
 module.exports = { 
-  constructErrorUnfurl,
   buildDomainBlocks,
   buildApplicationVersionBlocks,
   buildApplicationBlocks,

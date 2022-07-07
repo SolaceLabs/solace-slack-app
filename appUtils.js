@@ -68,9 +68,9 @@ const postRegisterMessage = async (channel, user) => {
           type: "mrkdwn",
           text: ":boom: Hey there 👋 I'm SolaceBot. \n\nCould not process your request yet, sorry about that!\n\n"
                     + "I need you to register a valid API token to access Solace Event Portal. "
-                    + "Follow the link to create a API token in the <https://solace-sso.solace.cloud/api-tokens/create|*Event Portal*>. "
+                    + "Follow the link to create a API token in the <https://console.solace.cloud/api-tokens/create|*Event Portal*>. "
                     + "It just takes a minute, and then you'll be all set. "
-                    + "\nJust click on `Register` button below and update the token and domain details."
+                    + "\nJust click on `Register` button below and update the token and URL domain details."
         },
       },      
       {
@@ -365,34 +365,22 @@ const showHelp = async(userId, channelId) => {
       type: "divider"
     },    
     {
-      type: "actions",
-      elements: [
+      "type": "context",
+      "elements": [
         {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: ":book: Documentation",
-          },
-          url: "https://github.com/SolaceLabs/solace-slack-app"
+          "type": "mrkdwn",
+          "text": "<https://github.com/SolaceLabs/solace-slack-app|*:book: Documentation*>",
         },
         {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: ":thought_balloon: Feedback"
-          },
-          url: "https://github.com/SolaceLabs/solace-slack-app/issues/new"
+          "type": "mrkdwn",
+          "text": "<https://github.com/SolaceLabs/solace-slack-app/issues/new?title=Solace%20Integration%20for%20Slack%20-%20Feedback&body=%23%20Description%20of%20Bug/Enhancement|*:thought_balloon: Feedback*>",
         },
         {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: ":busts_in_silhouette: Community"
-          },
-          url: "https://solace.community/"
+          "type": "mrkdwn",
+          "text": "<https://solace.community/|*:busts_in_silhouette: Community*>",
         },
       ]
-    },
+    },    
     {
       type: "divider"
     },        
@@ -408,7 +396,7 @@ const showHelp = async(userId, channelId) => {
       text: 'Message from Solace App'
     });
   } catch (error) {
-    console.error(error);
+    console.error(JSON.stringify(error, null, 2));
   }
 
   return;
@@ -484,7 +472,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         text: {
           "type": "mrkdwn", 
           "text": "`/solace applications domain:\"EP-Integration\"`\n"
-                  + "Get all applications in domain \"EP-Integration\"" 
+                  + "Get all applications in application domain \"EP-Integration\"" 
         }, 
       },
       {
@@ -501,7 +489,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         text: {
           "type": "mrkdwn",
           "text": '`/solace applications name:\"EP-Integration-Application\" domain:"EP-Integration"`\n'
-                  + "Get application by name \"EP-Integration-Application\" in domain \"EP-Integration\" " 
+                  + "Get application by name \"EP-Integration-Application\" in application domain \"EP-Integration\" " 
 
         },
       },
@@ -550,7 +538,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         text: {
           "type": "mrkdwn", 
           "text": "`/solace events shared:false domain:\"EP-Integration\"`\n"
-                  + "Get all events that are not shared in domain \"EP-Integration\"" 
+                  + "Get all events that are not shared in application domain \"EP-Integration\"" 
         }, 
       },
       {
@@ -607,7 +595,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
         text: {
           "type": "mrkdwn", 
           "text": "`/solace schemas domain:\"EP-Integration\"`\n"
-                  + "Get all schemas in domain \"EP-Integration\"" 
+                  + "Get all schemas in application domain \"EP-Integration\"" 
         }, 
       },
       {

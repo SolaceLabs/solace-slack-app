@@ -90,7 +90,7 @@ const updateView = async(user) => {
           "type": "mrkdwn",
           text: ":boom: Hey there 👋 \n\n"
                     + "I need you to register a valid API token to access Solace Event Portal. "
-                    + "Follow the link to create a API token in the <https://solace-sso.solace.cloud/api-tokens/create|*Event Portal*>. "
+                    + "Follow the link to create a API token in the <https://console.solace.cloud/api-tokens/create|*Event Portal*>. "
                     + "It just takes a minute, and then you'll be all set. "
                     + "\nJust click on `Register Token` button above and update the token and domain details."
         }
@@ -162,7 +162,11 @@ const openModal = (token) => {
           },
           "initial_value": token ? token.token : "",
           "multiline": true
-        }
+        },
+        "hint": {
+          "type": "plain_text",
+          "text": "API token to authenticate and authorize REST requests"
+        }  
       },
       {
         "type": "input",
@@ -177,11 +181,15 @@ const openModal = (token) => {
           "action_id": "content",
           "placeholder": {
             "type": "plain_text",
-            "text": "Enter a valid domain name..",
+            "text": "Enter a valid URL domain name..",
             "emoji": true,
           },
           "initial_value": token ? token.domain : "",
-        }
+        },
+        "hint": {
+          "type": "plain_text",
+          "text": "URL domain name to navigate to Event Portal"
+        }  
       },
     ]
   };
