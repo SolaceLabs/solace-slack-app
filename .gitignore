@@ -1,5 +1,7 @@
 .env
 tokens.json
+orgInstalls.json
+workspaceInstalls.json
 node_modules/
 /node_modules
 npm-debug.log

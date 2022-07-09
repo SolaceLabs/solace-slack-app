@@ -1,4 +1,4 @@
 {
   "verbose": true,
-  "ignore": ["tokens.json", "slackapp.log"]
+  "ignore": ["tokens.json", "orgInstalls.json", "workspaceInstalls.json", "slackapp.log"]
 }

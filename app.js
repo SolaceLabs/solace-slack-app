@@ -1,43 +1,100 @@
-const { App, ExpressReceiver } = require("@slack/bolt");
+const { App, LogLevel } = require("@slack/bolt");
 const { echoSlashCommand, solaceSlashCommand } = require('./appCommand');
 const { appHomeOpenedEvent, appLinkSharedEvent } = require('./appEvent');
 const { helloMessage } = require('./appMessage');
 const { fetchDependentResources, authorizeEPTokenAction, modifyEPTokenAction, getMoreResources, showHelpAction, showExamplesAction } = require('./appActions');
 const { modalView } = require('./appViews');
 
+const JsonDB = require('node-json-db').JsonDB;
+const orgDB = new JsonDB('orgInstalls', true, false);
+const workspaceDB = new JsonDB('workspaceInstalls', true, false);
+
 const NodeCache = require( "node-cache" );
 const cache = new NodeCache();
 require("dotenv").config();
 
+const { customRoutes } = require('./customRoutes');
+
 // Initializes your app with your bot token and signing secret
 const app = new App({
-  token: process.env.SLACK_BOT_TOKEN,
+  logLevel: LogLevel.DEBUG,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
-  socketMode:true,
-  appToken: process.env.APP_TOKEN,
-  port: process.env.PORT || 4000,
-});
-
-const receiver = new ExpressReceiver({
-  signingSecret: process.env.SLACK_SIGNING_SECRET
-});
-receiver.router.get("/", async (req, res) => {
-  if (cache.get('started')) {
-    try {
-      // Call chat.scheduleMessage with the built-in client
-      await app.client.chat.postMessage({
-        token: process.env.SLACK_BOT_TOKEN,
-        channel: "C03NASC7YD8",
-        text: 'Keepalive Ping @ ' + (new Date()).toUTCString()
-      });
+  clientId: process.env.SLACK_CLIENT_ID,
+  clientSecret: process.env.SLACK_CLIENT_SECRET,
+  stateSecret: 'solace-slack-integration',
+  customRoutes: customRoutes,
+  // appToken: process.env.SLACK_APP_TOKEN,
+  // token: process.env.SLACK_BOT_TOKEN,
+  scopes: [ 'app_mentions:read','channels:history','channels:read','chat:write','commands','groups:history','im:history','links:read','links:write','mpim:history','mpim:read','mpim:write' ],
+  installerOptions: {
+    stateVerification: false,
+  },
+  installationStore: {
+    storeInstallation: async (data) => {
+      console.log('storeInstallation', data);
+      if ( data.isEnterpriseInstall && data.enterprise !== undefined ) {
+        orgDB.reload();
+        try {
+          const install = orgDB.getData(`/${data.enterprise.id}/data`);
+          install[data.team.id] = data;
+        } catch (error) {
+          console.log('storeInstallation - Enterprise ' + data.enterprise.id + ' not found, registering');
+          orgDB.push(`/${data.enterprise.id}/data`, data, true);
+        }
+        orgDB.save();
+        return;
+      }
+      if (data.team !== undefined) {
+        workspaceDB.reload();
+        try {
+          const installs = workspaceDB.getData(`/${data.team.id}/data`);
+          installs[data.team.id] = data;
+        } catch (error) {
+          console.log('storeInstallation - Workspace ' + data.team.id + ' not found, registering');
+          workspaceDB.push(`/${data.team.id}/data`, data, true);
+        }
+        workspaceDB.save();
+        return;
+      }
+    },
+    fetchInstallation: async (installQuery) => {
+      console.log('fetchInstallation', installQuery);
+      try {
+        if (installQuery.isEnterpriseInstall && installQuery.enterpriseId !== undefined) {
+          orgDB.reload();
+          const install = orgDB.getData(`/${installQuery.enterpriseId}/data`);
+          return install;
+        }
+        if (installQuery.teamId !== undefined) {
+          workspaceDB.reload();
+          const install = workspaceDB.getData(`/${installQuery.teamId}/data`);
+          return install;
+        }
+      } catch (error) {
+        console.log("Failed fetching installation", error);
+        throw new Error("Authorization failed");
+      }
+    },
+    deleteInstallation: async (installQuery) => {
+      console.log('deleteInstallation', installQuery);
+      try {
+        if (installQuery.isEnterpriseInstall && installQuery.enterpriseId !== undefined ) {
+          orgDB.reload();
+          orgDB.delete(`/${installQuery.enterpriseId}`);
+          return;
+        }
+        if (installQuery.teamId !== undefined) {
+          workspaceDB.reload();
+          workspaceDB.delete(`/${installQuery.teamId}`);
+          return;
+        }
+      } catch (error) {
+        console.log("Failed deleting installation", error);
+        // ignore
+      }
     }
-    catch (error) {
-      console.error(error);
-    }
-  }
-
-  res.send('Hello World! This is Solace-Slack Integration App.')
-})
+  },
+});
 
 app.command('/echo', echoSlashCommand);
 app.command('/solace', solaceSlashCommand);
@@ -63,8 +120,7 @@ app.view('modal_view', modalView);
 
 (async () => {
   // Start your app
-  await app.start();
-  await receiver.start(process.env.PORT || 4000);
+  await app.start(process.env.PORT || 4000);
   cache.set('started', true);
   console.log('⚡️ Bolt app is running!');
 })();
