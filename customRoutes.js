@@ -1,6 +1,6 @@
 const manifest = require("./manifest.json");
 
-const oauthRedirect = manifest.oauth_config.redirect_urls[0]
+const oauthRedirect = process.env.SLACK_REDIRECT_URL;
 const botSopes = manifest.oauth_config.scopes.bot
 const userScopes = manifest.oauth_config.scopes.user
 
