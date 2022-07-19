@@ -1,6 +1,6 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
-# << IN WORK - NOT YET AVAILABLE ON SLACK APP DIRECTORY >> 
+# << NOT YET AVAILABLE ON SLACK APP DIRECTORY >> 
 
 # Solace PubSub+ Event Portal + Slack Integration
 
