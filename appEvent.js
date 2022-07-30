@@ -1,6 +1,5 @@
 const JsonDB = require('node-json-db').JsonDB;
 const db = new JsonDB('tokens', true, false);
-db.push('/dummy', 'dummy');
 
 const {
   getSolaceApplicationDomains,
@@ -150,38 +149,70 @@ const parseSolaceLink = (link) => {
   return cmd;
 }
 
+const appUninstalledEvent = async({event, context, payload}) => {
+  console.log('bot:tokens_revoked');
+
+  const workspaceDB = new JsonDB('workspaceInstalls', true, false);
+  const tokensDB = new JsonDB('tokens', true, false);
+  try {
+    workspaceDB.reload();
+    validWorkspaces = Object.entries(workspaceDB.data).filter(entry => { 
+                          return entry[0] !== context.teamId;
+                        });
+    workspaceDB.data = {};
+    validWorkspaces.forEach(entry => {
+      workspaceDB.data[entry[0]] = entry[1];
+    })
+
+    workspaceDB.save();
+    
+    tokensDB.reload();
+    validTokens = Object.entries(tokensDB.data).filter(entry => { 
+                    return entry[1].teamid !== context.teamId;
+                  });
+    tokensDB.data = {};
+    validTokens.forEach(entry => {
+      tokensDB.data[entry[0]] = entry[1];
+    })
+
+    tokensDB.save();
+  } catch(error) {
+    console.error(error); 
+  }
+}
+
 const appHomeOpenedEvent = async({event, context, payload}) => {
   console.log('bot:app_home_opened');
-  const { app } = require('./app')
+  const { app, appSettings } = require('./app')
   const appHome = require('./appHome');
 
   const userId = payload.user;
-
   // Display App Home
   const homeView = await appHome.createHome(userId);
-  
   try {
     const result = await app.client.views.publish({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
       user_id: event.user,
       view: homeView
     });
     
   } catch(e) {
+    console.log(e);
     app.error(e);
   }  
 }
 
 const appLinkSharedEvent = async({event, context, payload}) => {
   console.log('bot:link_shared');
-  const { app } = require('./app')
+  const { app, appSettings } = require('./app')
 
   let resultBlock = [];
   let errorBlock = null;
   let solaceCloudToken = undefined;
   try {
     db.reload();
-    solaceCloudToken = db.getData(`/${payload.user}/data`);
+    found = Object.entries(db.data).find(entry => { return entry[0] === payload.user; });
+    solaceCloudToken = found ? found[1] : undefined;
   } catch(error) {
     console.error(error); 
   }
@@ -290,7 +321,7 @@ const appLinkSharedEvent = async({event, context, payload}) => {
     try {
       if (errorBlock) 
         await app.client.chat.postEphemeral({
-          token: process.env.SLACK_BOT_TOKEN,
+          token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
           channel: payload.channel,
           user: payload.user,
           errorBlock,
@@ -309,7 +340,7 @@ const appLinkSharedEvent = async({event, context, payload}) => {
           }
 
           await app.client.chat.unfurl({
-            token: process.env.SLACK_BOT_TOKEN,
+            token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
             ts: event.message_ts,
             channel: payload.channel,
             unfurls: JSON.stringify(unfurls),
@@ -322,7 +353,7 @@ const appLinkSharedEvent = async({event, context, payload}) => {
           }
               
           await app.client.chat.unfurl({
-            token: process.env.SLACK_BOT_TOKEN,
+            token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
             ts: event.message_ts,
             channel: payload.channel,
             unfurls: JSON.stringify(unfurls),
@@ -339,5 +370,6 @@ const appLinkSharedEvent = async({event, context, payload}) => {
 
 module.exports = { 
   appHomeOpenedEvent,
+  appUninstalledEvent,
   appLinkSharedEvent
 };

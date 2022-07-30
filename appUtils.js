@@ -3,11 +3,11 @@ const checkArrayOfArrays = (a) => {
 }
 
 const postAlreadyRegisteredMessage = async (channel, user) => {
-  const { app } = require('./app')
+  const { app, appSettings } = require('./app')
   
   try {
     await app.client.chat.postEphemeral({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
       channel: channel,
       user: user,
       "blocks": [
@@ -51,7 +51,7 @@ const postAlreadyRegisteredMessage = async (channel, user) => {
 }
 
 const postRegisterMessage = async (channel, user) => {
-  const { app } = require('./app')
+  const { app, appSettings } = require('./app')
   
   try {
     let blocks = [
@@ -93,7 +93,7 @@ const postRegisterMessage = async (channel, user) => {
     ]
 
     await app.client.chat.postEphemeral({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
       channel: channel,
       user: user,
       "blocks": blocks,
@@ -118,7 +118,7 @@ const stripQuotes = (str) => {
 }
 
 const showHelp = async(userId, channelId) => {
-  const { app } = require('./app')
+  const { app, appSettings } = require('./app')
 
   let blocks = [
     {
@@ -388,7 +388,7 @@ const showHelp = async(userId, channelId) => {
 
   try {
     await app.client.chat.postEphemeral({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
       channel: channelId,
       user: userId,
       blocks,
@@ -403,7 +403,7 @@ const showHelp = async(userId, channelId) => {
 }
 
 const showExamples = async(userId, channelId, actionId=null) => {
-  const { app } = require('./app')
+  const { app, appSettings } = require('./app')
 
   let blocks = [];
   if (!actionId || actionId === 'click_examples_domains') {
@@ -614,7 +614,7 @@ const showExamples = async(userId, channelId, actionId=null) => {
 
   try {
     await app.client.chat.postEphemeral({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
       channel: channelId,
       user: userId,
       blocks,

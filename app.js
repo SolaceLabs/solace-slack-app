@@ -1,8 +1,9 @@
 const { App, LogLevel } = require("@slack/bolt");
 const { echoSlashCommand, solaceSlashCommand } = require('./appCommand');
-const { appHomeOpenedEvent, appLinkSharedEvent } = require('./appEvent');
+const { appHomeOpenedEvent, appUninstalledEvent, appLinkSharedEvent } = require('./appEvent');
 const { helloMessage } = require('./appMessage');
-const { fetchDependentResources, authorizeEPTokenAction, modifyEPTokenAction, getMoreResources, showHelpAction, showExamplesAction } = require('./appActions');
+const { fetchDependentResources, authorizeEPTokenAction, modifyEPTokenAction, 
+        getMoreResources, showHelpAction, showExamplesAction } = require('./appActions');
 const { modalView } = require('./appViews');
 
 const JsonDB = require('node-json-db').JsonDB;
@@ -14,6 +15,10 @@ const cache = new NodeCache();
 require("dotenv").config();
 
 const { customRoutes } = require('./customRoutes');
+
+const appSettings = {
+  BOT_TOKEN: process.env.BOT_TOKEN,
+};
 
 // Initializes your app with your bot token and signing secret
 const app = new App({
@@ -35,23 +40,22 @@ const app = new App({
       if ( data.isEnterpriseInstall && data.enterprise !== undefined ) {
         orgDB.reload();
         try {
-          const install = orgDB.getData(`/${data.enterprise.id}/data`);
-          install[data.team.id] = data;
+          const found = Object.entries(orgDB.data).find(entry => { return entry[0] === data.enterprise.id; });
+          if (!found)
+            orgDB.data[data.team.id] = data;
         } catch (error) {
-          console.log('storeInstallation - Enterprise ' + data.enterprise.id + ' not found, registering');
-          orgDB.push(`/${data.enterprise.id}/data`, data, true);
+          console.log('storeInstallation - Error while registering enterprise ' + data.enterprise.id);
         }
         orgDB.save();
         return;
-      }
-      if (data.team !== undefined) {
+      } else if (data.team !== undefined) {
         workspaceDB.reload();
         try {
-          const installs = workspaceDB.getData(`/${data.team.id}/data`);
-          installs[data.team.id] = data;
+          const found = Object.entries(workspaceDB.data).find(entry => { return entry[0] === data.team.id; });
+          if (!found)
+            workspaceDB.data[data.team.id] = data;
         } catch (error) {
-          console.log('storeInstallation - Workspace ' + data.team.id + ' not found, registering');
-          workspaceDB.push(`/${data.team.id}/data`, data, true);
+          console.log('storeInstallation - Error while registering Workspace ' + data.team.id);
         }
         workspaceDB.save();
         return;
@@ -59,38 +63,62 @@ const app = new App({
     },
     fetchInstallation: async (installQuery) => {
       console.log('fetchInstallation', installQuery);
+      let found = false;
       try {
         if (installQuery.isEnterpriseInstall && installQuery.enterpriseId !== undefined) {
           orgDB.reload();
-          const install = orgDB.getData(`/${installQuery.enterpriseId}/data`);
-          return install;
-        }
-        if (installQuery.teamId !== undefined) {
+          found = Object.entries(orgDB.data).find(entry => { return entry[0] === installQuery.enterpriseId; });
+          if (found)
+            appSettings.BOT_TOKEN = found[1].bot.token;
+        } else if (installQuery.teamId !== undefined) {
           workspaceDB.reload();
-          const install = workspaceDB.getData(`/${installQuery.teamId}/data`);
-          return install;
+          found = Object.entries(workspaceDB.data).find(entry => { return entry[0] === installQuery.teamId; });
+          if (found)
+            appSettings.BOT_TOKEN = found[1].bot.token;
         }
       } catch (error) {
         console.log("Failed fetching installation", error);
         throw new Error("Authorization failed");
       }
+
+      if (!found) {
+        console.log("Could not find installation");
+        throw new Error("Authorization failed");
+      }
+
+      return found[1];
     },
     deleteInstallation: async (installQuery) => {
       console.log('deleteInstallation', installQuery);
       try {
         if (installQuery.isEnterpriseInstall && installQuery.enterpriseId !== undefined ) {
           orgDB.reload();
-          orgDB.delete(`/${installQuery.enterpriseId}`);
+          validEnterprises = Object.entries(orgDB.data).filter(entry => { 
+                                return entry[0] !== installQuery.enterpriseId;
+                              });
+          orgDB.data = {};
+          validEnterprises.forEach(entry => {
+            orgDB.data[entry[0]] = entry[1];
+          })
+
+          orgDB.save();
           return;
         }
         if (installQuery.teamId !== undefined) {
           workspaceDB.reload();
-          workspaceDB.delete(`/${installQuery.teamId}`);
+          validWorkspaces = Object.entries(workspaceDB.data).filter(entry => { 
+                                return entry[0] !== installQuery.teamId;
+                              });
+          workspaceDB.data = {};
+          validWorkspaces.forEach(entry => {
+            workspaceDB.data[entry[0]] = entry[1];
+          })
+
+          workspaceDB.save();
           return;
         }
       } catch (error) {
         console.log("Failed deleting installation", error);
-        // ignore
       }
     }
   },
@@ -101,6 +129,7 @@ app.command('/solace', solaceSlashCommand);
 
 app.event('app_home_opened', appHomeOpenedEvent);
 app.event('link_shared', appLinkSharedEvent);
+app.event('tokens_revoked', appUninstalledEvent);
 
 app.message('hello', helloMessage);
 
@@ -125,4 +154,4 @@ app.view('modal_view', modalView);
   console.log('⚡️ Bolt app is running!');
 })();
 
-module.exports = { app, cache };
+module.exports = { app, appSettings, cache };

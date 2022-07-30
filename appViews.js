@@ -1,12 +1,11 @@
 const JsonDB = require('node-json-db').JsonDB;
 const db = new JsonDB('tokens', true, false);
-db.push('/dummy', 'dummy');
 
 const modalView = async ({ ack, body, context, view }) => {
   console.log('view:modalView');
   ack();
 
-  const { app, cache } = require('./app')
+  const { app, appSettings, cache } = require('./app')
   const appHome = require('./appHome');
   const ts = new Date();
   
@@ -15,12 +14,13 @@ const modalView = async ({ ack, body, context, view }) => {
     token: view.state.values.token.content.value,
     domain: view.state.values.domain.content.value,
     username: body.user.username,
-    userid: body.user.id
+    userid: body.user.id,
+    teamid: body.user.team_id
   }
 
   try {
-    let solaceCloudToken = db.getData(`/${body.user.id}/data`);
-    solaceCloudToken[body.user.id] = data;
+    db.reload();
+    db.data[body.user.id] = data;
     db.save();
   } catch(error) {
     console.log(error);
@@ -32,7 +32,7 @@ const modalView = async ({ ack, body, context, view }) => {
     let channelId = cache.get('channelId');
     if (channelId) {
       await app.client.chat.postEphemeral({
-        token: process.env.SLACK_BOT_TOKEN,
+        token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
         user: body.user.id,
         channel: channelId,
         "blocks": [
@@ -56,7 +56,7 @@ const modalView = async ({ ack, body, context, view }) => {
     }
     
     await app.client.apiCall('views.publish', {
-      token: process.env.SLACK_BOT_TOKEN,
+      token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
       user_id: body.user.id,
       view: homeView
     });

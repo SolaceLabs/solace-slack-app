@@ -1,6 +1,5 @@
 const JsonDB = require('node-json-db').JsonDB;
 const db = new JsonDB('tokens', true, false);
-db.push('/dummy', 'dummy');
 
 const {
   getSolaceApplicationDomains,
@@ -35,7 +34,7 @@ const {
 
 const getMoreResources = async({ body, context, ack }) => {
   console.log('action:getMoreResources');
-  const { app } = require('./app')
+  const { app, appSettings } = require('./app')
   ack();
   let next = JSON.parse(body.actions[0].value);
   let cmd = next.cmd;
@@ -59,7 +58,8 @@ const getMoreResources = async({ body, context, ack }) => {
   let solaceCloudToken = undefined;
   try {
     db.reload();
-    solaceCloudToken = db.getData(`/${body.user.id}/data`);
+    found = Object.entries(db.data).find(entry => { return entry[0] === body.user.id; });
+    solaceCloudToken = found ? found[1] : undefined;
   } catch (error) {
     console.log(error);
   }
@@ -179,7 +179,7 @@ const getMoreResources = async({ body, context, ack }) => {
   try {
     if (errorBlock) 
       await app.client.chat.postMessage({
-        token: process.env.SLACK_BOT_TOKEN,
+        token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
         ts: body.container.message_ts,
         channel: body.channel.id,
         "blocks": errorBlock,
@@ -196,7 +196,7 @@ const getMoreResources = async({ body, context, ack }) => {
             
           for (let k=0; k<chunkBlocks.length; k++) {
             await app.client.chat.postMessage({
-              token: process.env.SLACK_BOT_TOKEN,
+              token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
               ts: body.container.message_ts,
               channel: body.channel.id,
               "blocks": chunkBlocks[k],
@@ -213,7 +213,7 @@ const getMoreResources = async({ body, context, ack }) => {
           
         for (let k=0; k<chunkBlocks.length; k++) {
           await app.client.chat.postMessage({
-            token: process.env.SLACK_BOT_TOKEN,
+            token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
             ts: body.container.message_ts,
             channel: body.channel.id,
             "blocks": chunkBlocks[k],
@@ -244,7 +244,7 @@ const showExamplesAction = async({ body, context, ack }) => {
 
 const authorizeEPTokenAction = async({ body, context, ack }) => {
   console.log('action:authorizeEPTokenAction');
-  const { app, cache } = require('./app')
+  const { app, appSettings, cache } = require('./app')
   cache.set('channelId', body.channel.id, 60);
 
   ack();
@@ -253,7 +253,8 @@ const authorizeEPTokenAction = async({ body, context, ack }) => {
   let solaceCloudToken = undefined;
   try {
     db.reload();
-    solaceCloudToken = db.getData(`/${body.user.id}/data`);
+    found = Object.entries(db.data).find(entry => { return entry[0] === body.user.id; });
+    solaceCloudToken = found ? found[1] : undefined;
   } catch (error) {
     console.log(error);
   }
@@ -261,7 +262,7 @@ const authorizeEPTokenAction = async({ body, context, ack }) => {
   try {
     const view = appHome.openModal(solaceCloudToken);
     await app.client.views.open({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
       trigger_id: body.trigger_id,
       view: view
     });    
@@ -273,7 +274,7 @@ const authorizeEPTokenAction = async({ body, context, ack }) => {
 
 const fetchDependentResources = async({ ack, body, respond }) => {
   console.log('action:block_actions');
-  const { app } = require('./app')
+  const { app, appSettings } = require('./app')
 
   await ack();
 
@@ -357,7 +358,8 @@ const fetchDependentResources = async({ ack, body, respond }) => {
   let solaceCloudToken = undefined;
   try {
     db.reload();
-    solaceCloudToken = db.getData(`/${body.user.id}/data`);
+    found = Object.entries(db.data).find(entry => { return entry[0] === body.user.id; });
+    solaceCloudToken = found ? found[1] : undefined;
   } catch (error) {
     console.log(error);
   }
@@ -369,7 +371,7 @@ const fetchDependentResources = async({ ack, body, respond }) => {
   
   try {
     await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
       ts: body.container.message_ts,
       channel: body.channel.id,
       "blocks": headerBlock,
@@ -465,7 +467,7 @@ const fetchDependentResources = async({ ack, body, respond }) => {
   try {
     if (errorBlock) 
       await app.client.chat.postMessage({
-        token: process.env.SLACK_BOT_TOKEN,
+        token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
         ts: body.container.message_ts,
         channel: body.channel.id,
         "blocks": errorBlock,
@@ -482,7 +484,7 @@ const fetchDependentResources = async({ ack, body, respond }) => {
             
           for (let k=0; k<chunkBlocks.length; k++) {
             await app.client.chat.postMessage({
-              token: process.env.SLACK_BOT_TOKEN,
+              token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
               ts: body.container.message_ts,
               channel: body.channel.id,
               "blocks": chunkBlocks[k],
@@ -499,7 +501,7 @@ const fetchDependentResources = async({ ack, body, respond }) => {
           
         for (let k=0; k<chunkBlocks.length; k++) {
           await app.client.chat.postMessage({
-            token: process.env.SLACK_BOT_TOKEN,
+            token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
             ts: body.container.message_ts,
             channel: body.channel.id,
             "blocks": chunkBlocks[k],
@@ -515,7 +517,7 @@ const fetchDependentResources = async({ ack, body, respond }) => {
 
 const modifyEPTokenAction = async({ body, context, ack }) => {
   console.log('action:modifyEPTokenAction');
-  const { app } = require('./app')
+  const { app, appSettings } = require('./app')
 
   ack();
   
@@ -524,25 +526,18 @@ const modifyEPTokenAction = async({ body, context, ack }) => {
   let solaceCloudToken = undefined;
   try {
     db.reload();
-    solaceCloudToken = db.getData(`/${body.user.id}/data`);
+    found = Object.entries(db.data).find(entry => { return entry[0] === body.user.id; });
+    solaceCloudToken = found ? found[1] : undefined;
   } catch (error) {
     console.log(error);
-  }
-
-  if (!solaceCloudToken) {
-    await postRegisterMessage(body.channel.id, body.user.id);
-    return;
   }
 
   // Open a modal window with forms to be submitted by a user
   const view = appHome.openModal(solaceCloudToken);
   
   try {
-    db.reload();
-    solaceCloudToken = db.getData(`/${body.user.id}/data`);
-
     await app.client.views.open({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
       trigger_id: body.trigger_id,
       view: view
     });    

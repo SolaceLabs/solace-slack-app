@@ -1,6 +1,5 @@
 const JsonDB = require('node-json-db').JsonDB;
 const db = new JsonDB('tokens', true, false);
-db.push('/dummy', 'dummy');
 
 const {
   getSolaceApplicationDomains,
@@ -191,14 +190,15 @@ const alreadyRegistered = [
 
 const solaceSlashCommand = async({ack, payload, context}) => {  
   console.log('command:solaceSlashCommand');
-  const { app } = require('./app')
+  const { app, appSettings } = require('./app')
 
   await ack();
 
   let solaceCloudToken = undefined;
   try {
     db.reload();
-    solaceCloudToken = db.getData(`/${payload.user_id}/data`);
+    found = Object.entries(db.data).find(entry => { return entry[0] === payload.user_id; });
+    solaceCloudToken = found ? found[1] : undefined;
   } catch(error) {
     console.error(error); 
   }
@@ -213,7 +213,7 @@ const solaceSlashCommand = async({ack, payload, context}) => {
   if (!cmd.valid) {
     try {
       await app.client.chat.postEphemeral({
-        token: process.env.SLACK_BOT_TOKEN,
+        token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
         channel: payload.channel_id,
         user: payload.user_id,
         "blocks": [
@@ -340,7 +340,7 @@ const solaceSlashCommand = async({ack, payload, context}) => {
   let errorBlock = null;
   try {
     await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
       channel: payload.channel_id,
       "blocks": headerBlock,
       text: 'Message from Solace App'
@@ -411,13 +411,6 @@ const solaceSlashCommand = async({ack, payload, context}) => {
         resultBlock = buildSchemaBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});
     }
 
-    // await app.client.chat.postMessage({
-    //   token: process.env.SLACK_BOT_TOKEN,
-    //   channel: payload.channel_id,
-    //   "blocks": successBlock,
-    //   text: 'Message from Solace App'
-    // });
-
   } catch (error) {
     console.error(error);
     errorBlock = [
@@ -437,7 +430,7 @@ const solaceSlashCommand = async({ack, payload, context}) => {
   try {
     if (errorBlock) 
       await app.client.chat.postMessage({
-        token: process.env.SLACK_BOT_TOKEN,
+        token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
         channel: payload.channel_id,
         "blocks": errorBlock,
         text: 'Message from Solace App'
@@ -453,7 +446,7 @@ const solaceSlashCommand = async({ack, payload, context}) => {
             
           for (let k=0; k<chunkBlocks.length; k++) {
             await app.client.chat.postMessage({
-              token: process.env.SLACK_BOT_TOKEN,
+              token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
               channel: payload.channel_id,
               "blocks": chunkBlocks[k],
               text: 'Message from Solace App'
@@ -469,7 +462,7 @@ const solaceSlashCommand = async({ack, payload, context}) => {
           
         for (let k=0; k<chunkBlocks.length; k++) {
           await app.client.chat.postMessage({
-            token: process.env.SLACK_BOT_TOKEN,
+            token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
             channel: payload.channel_id,
             "blocks": chunkBlocks[k],
             text: 'Message from Solace App'

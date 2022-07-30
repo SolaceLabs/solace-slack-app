@@ -1,6 +1,5 @@
 const JsonDB = require('node-json-db').JsonDB;
 const db = new JsonDB('tokens', true, false);
-db.push('/dummy', 'dummy');
 
 const updateView = async(user) => {
   console.log('updateView');
@@ -8,7 +7,8 @@ const updateView = async(user) => {
   let solaceCloudToken = undefined;
   try {
     db.reload();
-    solaceCloudToken = db.getData(`/${user}/data`);
+    found = Object.entries(db.data).find(entry => { return entry[0] === user; });
+    solaceCloudToken = found ? found[1] : undefined;
   } catch(error) {
     console.error(error); 
   }
@@ -119,13 +119,13 @@ const updateView = async(user) => {
 /* Display App Home */
 const createHome = async(user, data) => {  
   console.log('createHome');
-  if(data) {     
-    // Store in a local DB
-    db.push(`/${user}/data`, data, true);   
+  if(data) {
+    db.reload();
+    db.data[user] = data;
+    db.save();
   }
-  
-  const userView = await updateView(user);
-  
+
+  const userView = await updateView(user);  
   return userView;
 };
 
