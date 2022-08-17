@@ -188,7 +188,7 @@ const alreadyRegistered = [
   },  
 ];
 
-const solaceSlashCommand = async({ack, payload, context}) => {  
+const solaceSlashCommand = async({ack, payload, respond, context}) => {  
   console.log('command:solaceSlashCommand');
   const { app, appSettings } = require('./app')
 
@@ -204,75 +204,86 @@ const solaceSlashCommand = async({ack, payload, context}) => {
   }
 
   if (!solaceCloudToken) {
-    await postRegisterMessage(payload.channel_id, payload.user_id);
+    await postRegisterMessage(payload, respond);
     return;  
   }
-
+  let blocks = [];
   let cmd = await isValidSolaceCommand(payload.text, solaceCloudToken);
   console.log('Validated Command: ', cmd);
   if (!cmd.valid) {
-    try {
-      await app.client.chat.postEphemeral({
-        token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
-        channel: payload.channel_id,
-        user: payload.user_id,
-        "blocks": [
+    blocks = [
+      {
+        type: "divider"
+      },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: ":no_entry_sign: *Invalid Solace command!*\n\n"
+                  + (payload.command ? payload.command : "") + " " + (payload.text ? payload.text : "") 
+                  + "\n\n"
+                  + "_" + cmd.error + "_"
+        },
+      },
+      {
+        type: "actions",
+        elements: [
           {
-            type: "divider"
-          },
-          {
-            type: "section",
+            type: "button",
             text: {
-              type: "mrkdwn",
-              text: ":no_entry_sign: *Invalid Solace command!*\n\n"
-                      + (payload.command ? payload.command : "") + " " + (payload.text ? payload.text : "") 
-                      + "\n\n"
-                      + "_" + cmd.error + "_"
+              type: "plain_text",
+              text: "Show help"
             },
+            action_id: "click_show_help"
           },
-          {
-            type: "actions",
-            elements: [
-              {
-                type: "button",
-                text: {
-                  type: "plain_text",
-                  text: "Show help"
-                },
-                action_id: "click_show_help"
-              },
-            ]
-          },
-          {
-            type: "divider"
-          },
-        ],
-        // Text in the notification
-        text: 'Message from Solace App'
-      });
+        ]
+      },
+      {
+        type: "divider"
+      },
+    ];
+
+    try {
+      if (payload.channel_name === 'directmessage') {
+        await respond({
+          response_type: 'ephemeral',
+          replace_original: false,
+          text: 'Message from Solace App',
+          blocks: blocks
+        });
+      } else {
+        await app.client.chat.postEphemeral({
+          token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
+          channel: payload.channel_id,
+          user: payload.user_id,
+          "blocks": blocks,
+          // Text in the notification
+          text: 'Message from Solace App'
+        });
+      }
     } catch (error) {
       console.error(error);
     }
     return;
-  } 
+  }
 
   if (cmd.resource === 'help') {
     console.log('command:showHelpCommand');
-    await showHelp(payload.user_id, payload.channel_id);
+    await showHelp(payload.channel_id, payload.channel_name, payload.user_id, respond);
     return;
   }
   if (cmd.resource === 'examples') {
     console.log('command:showExamplesCommand');
-    await showExamples(payload.user_id, payload.channel_id);
+    await showExamples(payload.channel_id, payload.channel_name, payload.user_id, null, respond);
     return;
   }
   if (cmd.resource === 'register') {
-    await postAlreadyRegisteredMessage(payload.channel_id, payload.user_id);
+    await postAlreadyRegisteredMessage(payload, respond);
     return;  
   }
 
   if (!solaceCloudToken) {
-    await postRegisterMessage(payload.channel_id, payload.user_id);
+    await postRegisterMessage(payload.channel_id, payload.channel_name, payload.user_id, respond);
     return;
   }
 
@@ -292,19 +303,6 @@ const solaceSlashCommand = async({ack, payload, context}) => {
       text: {
         type: "mrkdwn",
         text: "*Executing command...*\n\n\n" + payload.command + " " + payload.text
-      },
-    },
-    {
-      type: "divider"
-    }
-  ]
-
-  let successBlock = [
-    {
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: "*Command successfully executed!*\n\n\n"
       },
     },
     {
@@ -339,12 +337,22 @@ const solaceSlashCommand = async({ack, payload, context}) => {
   let resultBlock = [];
   let errorBlock = null;
   try {
-    await app.client.chat.postMessage({
-      token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-      channel: payload.channel_id,
-      "blocks": headerBlock,
-      text: 'Message from Solace App'
-    });
+    if (payload.channel_name === 'directmessage') {
+      await respond({
+        response_type: 'ephemeral',
+        replace_original: false,
+        text: 'Message from Solace App',
+        blocks: headerBlock
+      });
+    } else {
+      await app.client.chat.postEphemeral({
+        token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+        channel: payload.channel_id,
+        user: payload.user_id,
+        "blocks": headerBlock,
+        text: 'Message from Solace App'
+      });
+    }
 
     let response = undefined;
 
@@ -428,14 +436,24 @@ const solaceSlashCommand = async({ack, payload, context}) => {
   }
 
   try {
-    if (errorBlock) 
-      await app.client.chat.postMessage({
-        token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-        channel: payload.channel_id,
-        "blocks": errorBlock,
-        text: 'Message from Solace App'
-      });
-    else {
+    if (errorBlock) {
+      if (payload.channel_name === 'directmessage') {
+        await respond({
+          response_type: 'ephemeral',
+          replace_original: false,
+          text: 'Message from Solace App',
+          blocks: errorBlock
+        });
+      } else {
+        await app.client.chat.postEphemeral({
+          token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+          channel: payload.channel_id,
+          user: payload.user_id,
+          "blocks": errorBlock,
+          text: 'Message from Solace App'
+        });
+      }
+    } else {
       if (checkArrayOfArrays(resultBlock)) {
         for (let i=0; i<resultBlock.length; i++) {
           let chunkBlocks = [];
@@ -445,12 +463,22 @@ const solaceSlashCommand = async({ack, payload, context}) => {
           }      
             
           for (let k=0; k<chunkBlocks.length; k++) {
-            await app.client.chat.postMessage({
-              token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-              channel: payload.channel_id,
-              "blocks": chunkBlocks[k],
-              text: 'Message from Solace App'
-            });  
+            if (payload.channel_name === 'directmessage') {
+              await respond({
+                response_type: 'ephemeral',
+                replace_original: false,
+                text: 'Message from Solace App',
+                blocks: chunkBlocks[k]
+              });
+            } else {
+              await app.client.chat.postEphemeral({
+                token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+                channel: payload.channel_id,
+                user: payload.user_id,
+                "blocks": chunkBlocks[k],
+                text: 'Message from Solace App'
+              });  
+            }
           }
         }
       } else {
@@ -461,12 +489,22 @@ const solaceSlashCommand = async({ack, payload, context}) => {
         }
           
         for (let k=0; k<chunkBlocks.length; k++) {
-          await app.client.chat.postMessage({
-            token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-            channel: payload.channel_id,
-            "blocks": chunkBlocks[k],
-            text: 'Message from Solace App'
-          });  
+          if (payload.channel_name === 'directmessage') {
+            await respond({
+              response_type: 'ephemeral',
+              replace_original: false,
+              text: 'Message from Solace App',
+              blocks: chunkBlocks[k]
+            });
+          } else {
+            await app.client.chat.postEphemeral({
+                token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+                channel: payload.channel_id,
+                user: payload.user_id,
+                "blocks": chunkBlocks[k],
+                text: 'Message from Solace App'
+              });  
+          }
         }
       }
     }

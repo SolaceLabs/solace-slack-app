@@ -202,7 +202,7 @@ const appHomeOpenedEvent = async({event, context, payload}) => {
   }  
 }
 
-const appLinkSharedEvent = async({event, context, payload}) => {
+const appLinkSharedEvent = async({event, context, respond, say, ack, payload}) => {
   console.log('bot:link_shared');
   const { app, appSettings } = require('./app')
 
@@ -218,7 +218,7 @@ const appLinkSharedEvent = async({event, context, payload}) => {
   }
 
   if (!solaceCloudToken) {
-    await postRegisterMessage(payload.channel, payload.user);
+    // await postRegisterMessage(payload, say);
     return;
   }
 
@@ -319,46 +319,47 @@ const appLinkSharedEvent = async({event, context, payload}) => {
     }
 
     try {
-      if (errorBlock) 
-        await app.client.chat.postEphemeral({
-          token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-          channel: payload.channel,
-          user: payload.user,
-          errorBlock,
-          text: 'Unfurl error'
-        });
-      else {
+      if (errorBlock) {
+        if (payload.channel === 'directmessage') {
+          await respond({
+            response_type: 'ephemeral',
+            replace_original: false,
+            text: 'Unfurl error',
+            errorBlock,
+          });
+        } else {
+          await app.client.chat.postEphemeral({
+            token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+            channel: payload.channel,
+            user: payload.user,
+            errorBlock,
+            text: 'Unfurl error'
+          });
+        }
+      } else {
         if (checkArrayOfArrays(resultBlock)) {
           let finalBlocks = [];
 
           for (let j=0; j<resultBlock.length; j++)
             finalBlocks = finalBlocks.concat(resultBlock[j]);        
 
-          let unfurls = {};
-          unfurls[payload.links[i].url] = {
-            blocks: finalBlocks
-          }
-
-          await app.client.chat.unfurl({
-            token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-            ts: event.message_ts,
-            channel: payload.channel,
-            unfurls: JSON.stringify(unfurls),
-            text: 'Unfurl successful'
-          });            
+            await app.client.chat.unfurl({
+              response_type: 'ephemeral',
+              token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+              ts: event.message_ts,
+              channel: payload.channel,
+              user_auth_blocks: finalBlocks,
+              text: 'Unfurl successful'
+            });       
         } else {          
-          let unfurls = {};
-          unfurls[payload.links[i].url] = {
-            blocks: resultBlock
-          }
-              
           await app.client.chat.unfurl({
+            response_type: 'ephemeral',
             token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
             ts: event.message_ts,
             channel: payload.channel,
-            unfurls: JSON.stringify(unfurls),
+            user_auth_blocks: resultBlock,
             text: 'Unfurl successful'
-          });
+          });       
         }
     
       }

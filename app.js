@@ -18,6 +18,7 @@ const { customRoutes } = require('./customRoutes');
 
 const appSettings = {
   BOT_TOKEN: process.env.BOT_TOKEN,
+  APP_TOKEN: process.env.APP_TOKEN
 };
 
 // Initializes your app with your bot token and signing secret

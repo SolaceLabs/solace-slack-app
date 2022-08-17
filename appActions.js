@@ -26,19 +26,19 @@ const {
 } = require('./buildBlocks');
 const {
   postRegisterMessage,
-  postAlreadyRegisteredMessage,
   checkArrayOfArrays,
   showHelp,
   showExamples
 } = require('./appUtils')
 
-const getMoreResources = async({ body, context, ack }) => {
+const getMoreResources = async({ body, context, ack, respond }) => {
   console.log('action:getMoreResources');
   const { app, appSettings } = require('./app')
-  ack();
   let next = JSON.parse(body.actions[0].value);
   let cmd = next.cmd;
   let options = next.options;
+
+  await ack();
 
   let emptyBlock = [
     {
@@ -65,7 +65,7 @@ const getMoreResources = async({ body, context, ack }) => {
   }
 
   if (!solaceCloudToken) {
-    await postRegisterMessage(body.channel.id, body.user.id);
+    await postRegisterMessage(body.channel.id, body.channel.name, body.user.id, respond);
     return;
   }
 
@@ -177,15 +177,25 @@ const getMoreResources = async({ body, context, ack }) => {
   }
 
   try {
-    if (errorBlock) 
-      await app.client.chat.postMessage({
-        token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-        ts: body.container.message_ts,
-        channel: body.channel.id,
-        "blocks": errorBlock,
-        text: 'Message from Solace App'
-      });
-    else {
+    if (errorBlock) {
+      if (body.channel.name === 'directmessage') {
+        await respond({
+          response_type: 'ephemeral',
+          replace_original: false,
+          text: 'Message from Solace App',
+          blocks: errorBlock
+        });
+      } else {
+        await app.client.chat.postEphemeral({
+          token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+          ts: body.container.message_ts,
+          channel: body.channel.id,
+          user: body.user.id,
+          "blocks": errorBlock,
+          text: 'Message from Solace App'
+        });
+      }
+    } else {
       if (checkArrayOfArrays(resultBlock)) {
         for (let i=0; i<resultBlock.length; i++) {
           let chunkBlocks = [];
@@ -195,13 +205,23 @@ const getMoreResources = async({ body, context, ack }) => {
           }      
             
           for (let k=0; k<chunkBlocks.length; k++) {
-            await app.client.chat.postMessage({
-              token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-              ts: body.container.message_ts,
-              channel: body.channel.id,
-              "blocks": chunkBlocks[k],
-              text: 'Message from Solace App'
-            });  
+            if (body.channel.name === 'directmessage') {
+              await respond({
+                response_type: 'ephemeral',
+                replace_original: false,
+                text: 'Message from Solace App',
+                blocks: chunkBlocks[k]
+              });
+            } else {
+              await app.client.chat.postEphemeral({
+                token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+                ts: body.container.message_ts,
+                channel: body.channel.id,
+                user: body.user.id,
+                "blocks": chunkBlocks[k],
+                text: 'Message from Solace App'
+              });  
+            }
           }
         }
       } else {
@@ -212,13 +232,23 @@ const getMoreResources = async({ body, context, ack }) => {
         }
           
         for (let k=0; k<chunkBlocks.length; k++) {
-          await app.client.chat.postMessage({
-            token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-            ts: body.container.message_ts,
-            channel: body.channel.id,
-            "blocks": chunkBlocks[k],
-            text: 'Message from Solace App'
-          });  
+          if (body.channel.name === 'directmessage') {
+            await respond({
+              response_type: 'ephemeral',
+              replace_original: false,
+              text: 'Message from Solace App',
+              blocks: chunkBlocks[k]
+            });
+          } else {
+            await app.client.chat.postEphemeral({
+              token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+              ts: body.container.message_ts,
+              channel: body.channel.id,
+              user: body.user.id,
+              "blocks": chunkBlocks[k],
+              text: 'Message from Solace App'
+            });  
+          }
         }
       }
     }
@@ -228,24 +258,25 @@ const getMoreResources = async({ body, context, ack }) => {
   }
 }
 
-const showHelpAction = async({ body, context, ack }) => {
+const showHelpAction = async({ body, context, respond, ack }) => {
   console.log('action:showHelpAction');
   ack();
 
-  await showHelp(body.user.id, body.channel.id);
+  await showHelp(body.channel.id, body.channel.name, body.user.id, respond);
 }
 
-const showExamplesAction = async({ body, context, ack }) => {
+const showExamplesAction = async({ body, context, respond, ack }) => {
   console.log('action:showExamplesAction');
   ack();
 
-  await showExamples(body.user.id, body.channel.id, body.actions[0].action_id);
+  await showExamples(body.channel.id, body.channel.name, body.user.id, body.actions[0].action_id, respond);
 }
 
 const authorizeEPTokenAction = async({ body, context, ack }) => {
   console.log('action:authorizeEPTokenAction');
   const { app, appSettings, cache } = require('./app')
-  cache.set('channelId', body.channel.id, 60);
+  cache.set('channel_id', body.channel.id, 60);
+  cache.set('channel_name', body.channel.name, 60);
 
   ack();
   
@@ -365,18 +396,28 @@ const fetchDependentResources = async({ ack, body, respond }) => {
   }
 
   if (!solaceCloudToken) {
-    await postRegisterMessage(body.channel.id, body.user.id);
+    await postRegisterMessage(body.channel.id, body.channel.name, body.user.id, respond);
     return;
   }
   
   try {
-    await app.client.chat.postMessage({
-      token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-      ts: body.container.message_ts,
-      channel: body.channel.id,
-      "blocks": headerBlock,
-      text: 'Message from Solace App'
-    });
+    if (body.channel.name === 'directmessage') {
+      await respond({
+        response_type: 'ephemeral',
+        replace_original: false,
+        text: 'Message from Solace App',
+        blocks: errorBlock
+      });
+    } else {
+      await app.client.chat.postEphemeral({
+        token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+        ts: body.container.message_ts,
+        channel: body.channel.id,
+        user: body.user.id,
+        "blocks": errorBlock,
+        text: 'Message from Solace App'
+      });
+    }
 
     let response = undefined;
 
@@ -465,15 +506,25 @@ const fetchDependentResources = async({ ack, body, respond }) => {
 
   
   try {
-    if (errorBlock) 
-      await app.client.chat.postMessage({
-        token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-        ts: body.container.message_ts,
-        channel: body.channel.id,
-        "blocks": errorBlock,
-        text: 'Message from Solace App'
-      });
-    else {
+    if (errorBlock) {
+      if (body.channel.name === 'directmessage') {
+        await respond({
+          response_type: 'ephemeral',
+          replace_original: false,
+          text: 'Message from Solace App',
+          blocks: errorBlock
+        });
+      } else {
+        await app.client.chat.postEphemeral({
+          token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+          ts: body.container.message_ts,
+          channel: body.channel.id,
+          user: body.user.id,
+          "blocks": errorBlock,
+          text: 'Message from Solace App'
+        });
+      }
+    } else {
       if (checkArrayOfArrays(resultBlock)) {
         for (let i=0; i<resultBlock.length; i++) {
           let chunkBlocks = [];
@@ -483,13 +534,23 @@ const fetchDependentResources = async({ ack, body, respond }) => {
           }      
             
           for (let k=0; k<chunkBlocks.length; k++) {
-            await app.client.chat.postMessage({
-              token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-              ts: body.container.message_ts,
-              channel: body.channel.id,
-              "blocks": chunkBlocks[k],
-              text: 'Message from Solace App'
-            });  
+            if (body.channel.name === 'directmessage') {
+              await respond({
+                response_type: 'ephemeral',
+                replace_original: false,
+                text: 'Message from Solace App',
+                blocks: chunkBlocks[k]
+              });
+            } else {
+              await app.client.chat.postEphemeral({
+                token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+                ts: body.container.message_ts,
+                channel: body.channel.id,
+                user: body.user.id,
+                "blocks": chunkBlocks[k],
+                text: 'Message from Solace App'
+              });  
+            }
           }
         }
       } else {
@@ -500,13 +561,23 @@ const fetchDependentResources = async({ ack, body, respond }) => {
         }
           
         for (let k=0; k<chunkBlocks.length; k++) {
-          await app.client.chat.postMessage({
-            token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-            ts: body.container.message_ts,
-            channel: body.channel.id,
-            "blocks": chunkBlocks[k],
-            text: 'Message from Solace App'
-          });  
+          if (body.channel.name === 'directmessage') {
+            await respond({
+              response_type: 'ephemeral',
+              replace_original: false,
+              text: 'Message from Solace App',
+              blocks: chunkBlocks[k]
+            });
+          } else {
+            await app.client.chat.postEphemeral({
+              token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+              ts: body.container.message_ts,
+              channel: body.channel.id,
+              user: body.user.id,
+              "blocks": chunkBlocks[k],
+              text: 'Message from Solace App'
+            });  
+          }
         }
       }
     }

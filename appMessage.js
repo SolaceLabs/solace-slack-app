@@ -27,7 +27,7 @@ const getApplicationMessage = async({message, client, logger}) => {
   console.log('message:getApplicationMessage');
 
   const { app } = require('./app')
-  await app.client.chat.postMessage({
+  await app.client.chat.postEphemeral({
     channel: message.channel,
     blocks: [
       {

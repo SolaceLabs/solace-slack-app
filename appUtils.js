@@ -2,107 +2,122 @@ const checkArrayOfArrays = (a) => {
   return a.every(function(x){ return Array.isArray(x); });
 }
 
-const postAlreadyRegisteredMessage = async (channel, user) => {
-  const { app, appSettings } = require('./app')
+const postAlreadyRegisteredMessage = async (payload, respond) => {
+  const { app, appSettings, cache } = require('./app')
+  const channel_id = payload.channel_id;
+  const channel_name = payload.channel_name;
+  const user_id = payload.user_id;
   
+  cache.set('channel_id', channel_id, 60);
+  cache.set('channel_name', channel_name, 60);
+
+  const blocks = [
+    {
+      type: "divider"
+    },
+    {
+      "type": "section",
+      text: {
+        type: "mrkdwn",
+        "text": ":thumbsup: *You have already registered, you're all set!*\n\n"
+      },
+    },
+    {
+      "type": "section",
+      text: {
+        type: "mrkdwn",
+        "text": "If you want to update the token, go to " +
+                "<slack://app?team=" + payload.team_id + "&id=" + payload.api_app_id + "&tab=home" + 
+                "|*Solace App Home*> in the Apps list and update the token."
+      },
+    },
+    {
+      type: "divider"
+    },
+  ];
   try {
-    await app.client.chat.postEphemeral({
-      token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-      channel: channel,
-      user: user,
-      "blocks": [
-        {
-          type: "divider"
-        },
-        {
-          "type": "section",
-          text: {
-            type: "mrkdwn",
-            "text": ":thumbsup: *You have already registered, you're all set!*\n\n"
-          },
-        },
-        {
-          "type": "section",
-          text: {
-            type: "mrkdwn",
-            "text": "Do you want to update the API Token?"
-          },
-          "accessory": {
-            "type": "button",
-            "text": {
-              "type": "plain_text",
-              "emoji": true,
-              "text": "Update"
-            },
-            action_id: "add_token"
-          }    
-        },
-        {
-          type: "divider"
-        },
-      ],
-      // Text in the notification
-      text: 'Message from Solace App'
-    });
+    if (channel_name === 'directmessage') {
+      await respond({
+        response_type: 'ephemeral',
+        replace_original: false,
+        text: 'Message from Solace App',
+        blocks: blocks
+      });
+    } else {
+      await app.client.chat.postEphemeral({
+        token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+        channel: channel_id,
+        user: user_id,
+        "blocks": blocks,
+        // Text in the notification
+        text: 'Message from Solace App'
+      });
+    }
   } catch (error) {
     console.log('postAlreadyRegisteredMessage failed');
     console.log(error);
   }
 }
 
-const postRegisterMessage = async (channel, user) => {
-  const { app, appSettings } = require('./app')
-  
+const postRegisterMessage = async (payload, respond) => {
+  const { app, appSettings, cache } = require('./app')
+  const channel_id = payload?.channel_id ? payload?.channel_id : payload?.channel;
+  const channel_name = payload?.channel_name ? payload?.channel_name : 'directmessage';
+  const user_id = payload?.user_id ? payload?.user_id : payload?.user;
+
+  let blocks = [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: "*Discover, Visualize and Catalog Your Event Streams With PubSub+ Event Portal*\n\n\n"
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: ":boom: Hey there 👋 I'm SolaceBot. \n\nCould not process your request yet, sorry about that!\n\n"
+                  + "I need you to register a valid API token to access Solace Event Portal. Go to "
+                  + (payload.team_id ?
+                      "<slack://app?team=" + payload.team_id + "&id=" + payload.api_app_id + "&tab=home|*Solace App Home*>  in the Apps list and register a token." :
+                      "Apps list in the bottom of the sidebar on right, select Solace App and register a token")
+      },
+    },      
+    {
+      type: "divider"
+    },
+  ]
+
   try {
-    let blocks = [
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: "*Discover, Visualize and Catalog Your Event Streams With PubSub+ Event Portal*\n\n\n"
-        },
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: ":boom: Hey there 👋 I'm SolaceBot. \n\nCould not process your request yet, sorry about that!\n\n"
-                    + "I need you to register a valid API token to access Solace Event Portal. "
-                    + "Follow the link to create a API token in the <https://console.solace.cloud/api-tokens/create|*Event Portal*>. "
-                    + "It just takes a minute, and then you'll be all set. "
-                    + "\nJust click on `Register` button below and update the token and URL domain details."
-        },
-      },      
-      {
-        type: "actions",
-        elements: [
-          {
-            type: "button",
-            text: {
-              type: "plain_text",
-              text: "Register"
-            },
-            style: "primary",
-            action_id: "click_authorize"
-          },
-        ]
-      },
-      {
-        type: "divider"
-      },
-    ]
-
-    await app.client.chat.postEphemeral({
-      token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
-      channel: channel,
-      user: user,
-      "blocks": blocks,
-      text: 'Message from Solace App'
-    });
-
+    if (channel_name === 'directmessage') {
+      await app.client.chat.postEphemeral({
+        token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
+        channel: channel_id,
+        user: user_id,
+        "blocks": blocks,
+        text: 'Message from Solace App'
+      });
+    } else {
+      await app.client.chat.postEphemeral({
+        token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
+        channel: channel_id,
+        user: user_id,
+        "blocks": blocks,
+        text: 'Message from Solace App'
+      });
+    }
   } catch (error) {
     console.log('postRegisterMessage failed');
     console.log(error);
+
+    await respond({
+      // response_type: 'ephemeral',
+      replace_original: false,
+      text: 'Message from Solace App',
+      blocks: blocks
+    });
+
   }
 }
 
@@ -117,8 +132,8 @@ const stripQuotes = (str) => {
   return str.substring(begin, end);
 }
 
-const showHelp = async(userId, channelId) => {
-  const { app, appSettings } = require('./app')
+const showHelp = async(channel_id, channel_name, user_id, respond) => {
+  const { app, appSettings, cache } = require('./app')
 
   let blocks = [
     {
@@ -387,14 +402,23 @@ const showHelp = async(userId, channelId) => {
   ];
 
   try {
-    await app.client.chat.postEphemeral({
-      token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
-      channel: channelId,
-      user: userId,
-      blocks,
-      // Text in the notification
-      text: 'Message from Solace App'
-    });
+    if (channel_name === 'directmessage') {
+      await respond({
+        response_type: 'ephemeral',
+        replace_original: false,
+        text: 'Message from Solace App',
+        blocks: blocks
+      });
+    } else {
+      await app.client.chat.postEphemeral({
+        token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
+        channel: channel_id,
+        user: user_id,
+        blocks,
+        // Text in the notification
+        text: 'Message from Solace App'
+      });
+    }
   } catch (error) {
     console.error(JSON.stringify(error, null, 2));
   }
@@ -402,7 +426,7 @@ const showHelp = async(userId, channelId) => {
   return;
 }
 
-const showExamples = async(userId, channelId, actionId=null) => {
+const showExamples = async(channel_id, channel_name, user_id, actionId=null, respond) => {
   const { app, appSettings } = require('./app')
 
   let blocks = [];
@@ -613,14 +637,23 @@ const showExamples = async(userId, channelId, actionId=null) => {
   }
 
   try {
-    await app.client.chat.postEphemeral({
-      token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
-      channel: channelId,
-      user: userId,
-      blocks,
-      // Text in the notification
-      text: 'Message from Solace App'
-    });
+    if (channel_name === 'directmessage') {
+      await respond({
+        response_type: 'ephemeral',
+        replace_original: false,
+        text: 'Message from Solace App',
+        blocks: blocks
+      });
+    } else {
+      await app.client.chat.postEphemeral({
+        token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
+        channel: channel_id,
+        user: user_id,
+        blocks,
+        // Text in the notification
+        text: 'Message from Solace App'
+      });
+    }
   } catch (error) {
     console.error(error);
   }
