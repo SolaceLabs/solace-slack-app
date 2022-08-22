@@ -343,21 +343,28 @@ const appLinkSharedEvent = async({event, context, respond, say, ack, payload}) =
           for (let j=0; j<resultBlock.length; j++)
             finalBlocks = finalBlocks.concat(resultBlock[j]);        
 
-            await app.client.chat.unfurl({
-              // response_type: 'ephemeral',
-              token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-              ts: event.message_ts,
-              channel: payload.channel,
-              user_auth_blocks: finalBlocks,
-              text: 'Unfurl successful'
-            });       
+          let unfurls = {};
+          unfurls[payload.links[i].url] = {
+            blocks: finalBlocks
+          }
+
+          await app.client.chat.unfurl({
+            // response_type: 'ephemeral',
+            token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+            ts: event.message_ts,
+            channel: payload.channel,
+            // user_auth_blocks: finalBlocks,
+            unfurls: JSON.stringify(unfurls),
+            text: 'Unfurl successful'
+          });       
         } else {          
           await app.client.chat.unfurl({
             // response_type: 'ephemeral',
             token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
             ts: event.message_ts,
             channel: payload.channel,
-            user_auth_blocks: resultBlock,
+            // user_auth_blocks: resultBlock,
+            unfurls: JSON.stringify(unfurls),
             text: 'Unfurl successful'
           });       
         }
