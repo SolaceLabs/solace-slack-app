@@ -344,7 +344,7 @@ const appLinkSharedEvent = async({event, context, respond, say, ack, payload}) =
             finalBlocks = finalBlocks.concat(resultBlock[j]);        
 
             await app.client.chat.unfurl({
-              response_type: 'ephemeral',
+              // response_type: 'ephemeral',
               token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
               ts: event.message_ts,
               channel: payload.channel,
@@ -353,7 +353,7 @@ const appLinkSharedEvent = async({event, context, respond, say, ack, payload}) =
             });       
         } else {          
           await app.client.chat.unfurl({
-            response_type: 'ephemeral',
+            // response_type: 'ephemeral',
             token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
             ts: event.message_ts,
             channel: payload.channel,
