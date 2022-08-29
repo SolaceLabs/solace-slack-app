@@ -357,7 +357,12 @@ const appLinkSharedEvent = async({event, context, respond, say, ack, payload}) =
             unfurls: JSON.stringify(unfurls),
             text: 'Unfurl successful'
           });       
-        } else {          
+        } else {    
+          let unfurls = {};
+          unfurls[payload.links[i].url] = {
+            blocks: resultBlock
+          }
+      
           await app.client.chat.unfurl({
             // response_type: 'ephemeral',
             token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
