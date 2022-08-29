@@ -184,11 +184,11 @@ const openModal = (token) => {
             "text": "Enter a valid URL domain name..",
             "emoji": true,
           },
-          "initial_value": token ? token.domain : "",
+          "initial_value": token ? token.domain : "console.solace.cloud",
         },
         "hint": {
           "type": "plain_text",
-          "text": "URL domain name to navigate to Event Portal"
+          "text": "URL domain name to navigate to Event Portal, update with correct domain name if it is not console.solace.cloud"
         }  
       },
     ]
