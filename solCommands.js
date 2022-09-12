@@ -389,8 +389,10 @@ const getSolaceSchemaVersions = async (schemaId, solaceCloudToken, options=null)
   let response = undefined;
   if (options.hasOwnProperty('versionId'))
     response = await ep.getSchemaVersionByID(options.versionId, params);
-  else
-    response = await ep.getSchemaVersions(schemaId, params);
+  else {
+    response = await ep.getSchemaVersions(options.id, params);
+  }
+
   results = {data: results.concat(response.data), meta: response.meta};
 
   for (let i=0; i<results.data.length; i++) {
