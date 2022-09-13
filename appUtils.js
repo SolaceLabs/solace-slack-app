@@ -4,8 +4,11 @@ const checkArrayOfArrays = (a) => {
 
 const postAlreadyRegisteredMessage = async (payload, respond) => {
   const { app, appSettings, cache } = require('./app')
+  let channel_name = payload?.channel_name ? payload?.channel_name : 'directmessage';
+  if (channel_name === 'privategroup' || channel_name.indexOf('mpdm-') === 0) 
+    channel_name = 'directmessage';
+
   const channel_id = payload.channel_id;
-  const channel_name = payload.channel_name;
   const user_id = payload.user_id;
   
   cache.set('channel_id', channel_id, 60);
@@ -36,7 +39,7 @@ const postAlreadyRegisteredMessage = async (payload, respond) => {
     },
   ];
   try {
-    if (channel_name === 'directmessage') {
+    if (channel_name === 'directmessage' || channel_name.indexOf('mpdm-') === 0) {
       await respond({
         response_type: 'ephemeral',
         replace_original: false,
@@ -59,11 +62,8 @@ const postAlreadyRegisteredMessage = async (payload, respond) => {
   }
 }
 
-const postRegisterMessage = async (payload, respond) => {
+const postUnregisteredMessage = async (channel_id, channel_name, user_id, respond) => {
   const { app, appSettings, cache } = require('./app')
-  const channel_id = payload?.channel_id ? payload?.channel_id : payload?.channel;
-  const channel_name = payload?.channel_name ? payload?.channel_name : 'directmessage';
-  const user_id = payload?.user_id ? payload?.user_id : payload?.user;
 
   let blocks = [
     {
@@ -78,10 +78,7 @@ const postRegisterMessage = async (payload, respond) => {
       text: {
         type: "mrkdwn",
         text: ":boom: Hey there 👋 I'm SolaceBot. \n\nCould not process your request yet, sorry about that!\n\n"
-                  + "I need you to register a valid API token to access Solace Event Portal. Go to "
-                  + (payload.team_id ?
-                      "<slack://app?team=" + payload.team_id + "&id=" + payload.api_app_id + "&tab=home|*Solace App Home*>  in the Apps list and register a token." :
-                      "Apps list in the bottom of the sidebar on right, select Solace App and register a token")
+                  + "I need you to register a valid API token to access Solace Event Portal in the Solace App Home tab."
       },
     },      
     {
@@ -91,12 +88,11 @@ const postRegisterMessage = async (payload, respond) => {
 
   try {
     if (channel_name === 'directmessage') {
-      await app.client.chat.postEphemeral({
-        token: appSettings.BOT_TOKEN, //process.env.SLACK_BOT_TOKEN,
-        channel: channel_id,
-        user: user_id,
-        "blocks": blocks,
-        text: 'Message from Solace App'
+      await respond({
+        response_type: 'ephemeral',
+        replace_original: false,
+        text: 'Message from Solace App',
+        blocks: blocks
       });
     } else {
       await app.client.chat.postEphemeral({
@@ -108,7 +104,7 @@ const postRegisterMessage = async (payload, respond) => {
       });
     }
   } catch (error) {
-    console.log('postRegisterMessage failed');
+    console.log('postUnregisteredMessage failed');
     console.log(error);
 
     await respond({
@@ -328,7 +324,7 @@ const showHelp = async(channel_id, channel_name, user_id, respond) => {
       "fields": [
         { 
           "type": "mrkdwn", 
-          "text": "Register/Update API Token" 
+          "text": "Register/Update Token or Domain" 
         }, 
         {
           "type": "mrkdwn",
@@ -637,7 +633,7 @@ const showExamples = async(channel_id, channel_name, user_id, actionId=null, res
   }
 
   try {
-    if (channel_name === 'directmessage' || channel_name.indexOf('mpdm-') === 0) {
+    if (channel_name === 'directmessage') {
       await respond({
         response_type: 'ephemeral',
         replace_original: false,
@@ -662,7 +658,7 @@ const showExamples = async(channel_id, channel_name, user_id, actionId=null, res
 
 
 module.exports = { 
-  postRegisterMessage,
+  postUnregisteredMessage,
   postAlreadyRegisteredMessage,
   checkArrayOfArrays,
   stripQuotes,

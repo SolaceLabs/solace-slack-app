@@ -15,7 +15,7 @@ const {
   buildSchemaBlocks,
 } = require('./buildBlocks');
 const {
-  postRegisterMessage,
+  postUnregisteredMessage,
   postAlreadyRegisteredMessage,
   checkArrayOfArrays,
   stripQuotes,
@@ -191,6 +191,9 @@ const alreadyRegistered = [
 const solaceSlashCommand = async({ack, payload, respond, context}) => {  
   console.log('command:solaceSlashCommand');
   const { app, appSettings } = require('./app')
+  let channel_name = payload?.channel_name ? payload?.channel_name : 'directmessage';
+  if (channel_name === 'privategroup' || channel_name.indexOf('mpdm-') === 0) 
+    channel_name = 'directmessage';
 
   await ack();
 
@@ -204,7 +207,7 @@ const solaceSlashCommand = async({ack, payload, respond, context}) => {
   }
 
   if (!solaceCloudToken) {
-    await postRegisterMessage(payload, respond);
+    await postUnregisteredMessage(payload.channel_id, channel_name, payload.user_id, respond);
     return;  
   }
   let blocks = [];
@@ -244,7 +247,7 @@ const solaceSlashCommand = async({ack, payload, respond, context}) => {
     ];
 
     try {
-      if (payload.channel_name === 'directmessage') {
+      if (channel_name === 'directmessage') {
         await respond({
           response_type: 'ephemeral',
           replace_original: false,
@@ -269,12 +272,12 @@ const solaceSlashCommand = async({ack, payload, respond, context}) => {
 
   if (cmd.resource === 'help') {
     console.log('command:showHelpCommand');
-    await showHelp(payload.channel_id, payload.channel_name, payload.user_id, respond);
+    await showHelp(payload.channel_id, channel_name, payload.user_id, respond);
     return;
   }
   if (cmd.resource === 'examples') {
     console.log('command:showExamplesCommand');
-    await showExamples(payload.channel_id, payload.channel_name, payload.user_id, null, respond);
+    await showExamples(payload.channel_id, channel_name, payload.user_id, null, respond);
     return;
   }
   if (cmd.resource === 'register') {
@@ -283,7 +286,7 @@ const solaceSlashCommand = async({ack, payload, respond, context}) => {
   }
 
   if (!solaceCloudToken) {
-    await postRegisterMessage(payload.channel_id, payload.channel_name, payload.user_id, respond);
+    await postUnregisteredMessage(payload.channel_id, channel_name, payload.user_id, respond);
     return;
   }
 
@@ -337,7 +340,7 @@ const solaceSlashCommand = async({ack, payload, respond, context}) => {
   let resultBlock = [];
   let errorBlock = null;
   try {
-    if (payload.channel_name === 'directmessage') {
+    if (channel_name === 'directmessage') {
       await respond({
         response_type: 'ephemeral',
         replace_original: false,
@@ -437,7 +440,7 @@ const solaceSlashCommand = async({ack, payload, respond, context}) => {
 
   try {
     if (errorBlock) {
-      if (payload.channel_name === 'directmessage') {
+      if (channel_name === 'directmessage') {
         await respond({
           response_type: 'ephemeral',
           replace_original: false,
@@ -463,7 +466,7 @@ const solaceSlashCommand = async({ack, payload, respond, context}) => {
           }      
             
           for (let k=0; k<chunkBlocks.length; k++) {
-            if (payload.channel_name === 'directmessage') {
+            if (channel_name === 'directmessage') {
               await respond({
                 response_type: 'ephemeral',
                 replace_original: false,
@@ -489,7 +492,7 @@ const solaceSlashCommand = async({ack, payload, respond, context}) => {
         }
           
         for (let k=0; k<chunkBlocks.length; k++) {
-          if (payload.channel_name === 'directmessage') {
+          if (channel_name === 'directmessage') {
             await respond({
               response_type: 'ephemeral',
               replace_original: false,

@@ -21,7 +21,7 @@ const {
   buildSchemaVersionBlocks
 } = require('./buildBlocks');
 const {
-  postRegisterMessage,
+  postUnregisteredMessage,
   checkArrayOfArrays
 } = require('./appUtils')
 
@@ -218,7 +218,7 @@ const appLinkSharedEvent = async({event, context, respond, say, ack, payload}) =
   }
 
   if (!solaceCloudToken) {
-    // await postRegisterMessage(payload, say);
+    await postUnregisteredMessage(payload.channel_id, channel_name, payload.user_id, respond);
     return;
   }
 
@@ -320,22 +320,30 @@ const appLinkSharedEvent = async({event, context, respond, say, ack, payload}) =
 
     try {
       if (errorBlock) {
-        if (payload.channel === 'directmessage') {
-          await respond({
-            response_type: 'ephemeral',
-            replace_original: false,
-            text: 'Unfurl error',
-            errorBlock,
-          });
-        } else {
-          await app.client.chat.postEphemeral({
-            token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
-            channel: payload.channel,
-            user: payload.user,
-            errorBlock,
-            text: 'Unfurl error'
-          });
+        // Event (unfurl) never carries channel name, a channel in the event/payload always holds the channel-id. It is ok, 
+        // we want the unfurl to be posted so that it is visible on the conversation!!
+        // await app.client.chat.postEphemeral({
+        //   token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+        //   channel: payload.channel,
+        //   user: payload.user,
+        //   blocks: errorBlock,
+        //   text: 'Unfurl error'
+        // });
+
+        let unfurls = {};
+        unfurls[payload.links[i].url] = {
+          blocks: errorBlock
         }
+
+        await app.client.chat.unfurl({
+          response_type: 'ephemeral',
+          token: appSettings.BOT_TOKEN, // process.env.SLACK_BOT_TOKEN,
+          ts: event.message_ts,
+          channel: payload.channel,
+          unfurls: JSON.stringify(unfurls),
+          text: 'Unfurl successful'
+        });       
+
       } else {
         if (checkArrayOfArrays(resultBlock)) {
           let finalBlocks = [];

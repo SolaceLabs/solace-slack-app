@@ -42,7 +42,7 @@ const updateView = async(user) => {
         action_id: "add_token", 
         text: {
           type: "plain_text",
-          text: solaceCloudToken ? "Update Token" : "Register Token",
+          text: solaceCloudToken ? "Change Token/Domain" : "Register Token",
           emoji: true,
         }
       }

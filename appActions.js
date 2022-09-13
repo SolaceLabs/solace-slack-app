@@ -25,7 +25,7 @@ const {
   buildSchemaVersionBlocks
 } = require('./buildBlocks');
 const {
-  postRegisterMessage,
+  postUnregisteredMessage,
   checkArrayOfArrays,
   showHelp,
   showExamples
@@ -34,6 +34,10 @@ const {
 const getMoreResources = async({ body, context, ack, respond }) => {
   console.log('action:getMoreResources');
   const { app, appSettings } = require('./app')
+  let channel_name = body?.channel ? body?.channel.name : 'directmessage';
+  if (channel_name === 'privategroup' || channel_name.indexOf('mpdm-') === 0) 
+    channel_name = 'directmessage';
+
   let next = JSON.parse(body.actions[0].value);
   let cmd = next.cmd;
   let options = next.options;
@@ -62,11 +66,6 @@ const getMoreResources = async({ body, context, ack, respond }) => {
     solaceCloudToken = found ? found[1] : undefined;
   } catch (error) {
     console.log(error);
-  }
-
-  if (!solaceCloudToken) {
-    await postRegisterMessage(body.channel.id, body.channel.name, body.user.id, respond);
-    return;
   }
 
   try {
@@ -178,7 +177,7 @@ const getMoreResources = async({ body, context, ack, respond }) => {
 
   try {
     if (errorBlock) {
-      if (body.channel.name === 'directmessage') {
+      if (channel_name === 'directmessage') {
         await respond({
           response_type: 'ephemeral',
           replace_original: false,
@@ -205,7 +204,7 @@ const getMoreResources = async({ body, context, ack, respond }) => {
           }      
             
           for (let k=0; k<chunkBlocks.length; k++) {
-            if (body.channel.name === 'directmessage') {
+            if (channel_name === 'directmessage') {
               await respond({
                 response_type: 'ephemeral',
                 replace_original: false,
@@ -232,7 +231,7 @@ const getMoreResources = async({ body, context, ack, respond }) => {
         }
           
         for (let k=0; k<chunkBlocks.length; k++) {
-          if (body.channel.name === 'directmessage') {
+          if (channel_name === 'directmessage') {
             await respond({
               response_type: 'ephemeral',
               replace_original: false,
@@ -262,21 +261,33 @@ const showHelpAction = async({ body, context, respond, ack }) => {
   console.log('action:showHelpAction');
   ack();
 
-  await showHelp(body.channel.id, body.channel.name, body.user.id, respond);
+  let channel_name = body?.channel ? body?.channel.name : 'directmessage';
+  if (channel_name === 'privategroup' || channel_name.indexOf('mpdm-') === 0) 
+    channel_name = 'directmessage';
+
+  await showHelp(body.channel.id, channel_name, body.user.id, respond);
 }
 
 const showExamplesAction = async({ body, context, respond, ack }) => {
   console.log('action:showExamplesAction');
   ack();
 
-  await showExamples(body.channel.id, body.channel.name, body.user.id, body.actions[0].action_id, respond);
+  let channel_name = body?.channel ? body?.channel.name : 'directmessage';
+  if (channel_name === 'privategroup' || channel_name.indexOf('mpdm-') === 0) 
+    channel_name = 'directmessage';
+
+  await showExamples(body.channel.id, channel_name, body.user.id, body.actions[0].action_id, respond);
 }
 
 const authorizeEPTokenAction = async({ body, context, ack }) => {
   console.log('action:authorizeEPTokenAction');
   const { app, appSettings, cache } = require('./app')
+  let channel_name = body?.channel ? body?.channel.name : 'directmessage';
+  if (channel_name === 'privategroup' || channel_name.indexOf('mpdm-') === 0) 
+    channel_name = 'directmessage';
+
   cache.set('channel_id', body.channel.id, 60);
-  cache.set('channel_name', body.channel.name, 60);
+  cache.set('channel_name', channel_name, 60);
 
   ack();
   
@@ -306,8 +317,25 @@ const authorizeEPTokenAction = async({ body, context, ack }) => {
 const fetchDependentResources = async({ ack, body, respond }) => {
   console.log('action:block_actions');
   const { app, appSettings } = require('./app')
+  let channel_name = body?.channel ? body?.channel.name : 'directmessage';
+  if (channel_name === 'privategroup' || channel_name.indexOf('mpdm-') === 0) 
+    channel_name = 'directmessage';
 
   await ack();
+
+  let solaceCloudToken = undefined;
+  try {
+    db.reload();
+    found = Object.entries(db.data).find(entry => { return entry[0] === body.user.id; });
+    solaceCloudToken = found ? found[1] : undefined;
+  } catch (error) {
+    console.log(error);
+  }
+
+  if (!solaceCloudToken) {
+    await postUnregisteredMessage(body.channel.id, channel_name, body.user.id, respond);
+    return;
+  }
 
   let option = body.actions[0].selected_option.value;
   let data = option.split('|');
@@ -386,22 +414,9 @@ const fetchDependentResources = async({ ack, body, respond }) => {
 
   let resultBlock = [];
   let errorBlock = null;
-  let solaceCloudToken = undefined;
-  try {
-    db.reload();
-    found = Object.entries(db.data).find(entry => { return entry[0] === body.user.id; });
-    solaceCloudToken = found ? found[1] : undefined;
-  } catch (error) {
-    console.log(error);
-  }
 
-  if (!solaceCloudToken) {
-    await postRegisterMessage(body.channel.id, body.channel.name, body.user.id, respond);
-    return;
-  }
-  
   try {
-    if (body.channel.name === 'directmessage') {
+    if (channel_name === 'directmessage') {
       await respond({
         response_type: 'ephemeral',
         replace_original: false,
@@ -507,7 +522,7 @@ const fetchDependentResources = async({ ack, body, respond }) => {
   
   try {
     if (errorBlock) {
-      if (body.channel.name === 'directmessage') {
+      if (channel_name === 'directmessage') {
         await respond({
           response_type: 'ephemeral',
           replace_original: false,
@@ -534,7 +549,7 @@ const fetchDependentResources = async({ ack, body, respond }) => {
           }      
             
           for (let k=0; k<chunkBlocks.length; k++) {
-            if (body.channel.name === 'directmessage') {
+            if (channel_name === 'directmessage') {
               await respond({
                 response_type: 'ephemeral',
                 replace_original: false,
@@ -561,7 +576,7 @@ const fetchDependentResources = async({ ack, body, respond }) => {
         }
           
         for (let k=0; k<chunkBlocks.length; k++) {
-          if (body.channel.name === 'directmessage') {
+          if (channel_name === 'directmessage') {
             await respond({
               response_type: 'ephemeral',
               replace_original: false,

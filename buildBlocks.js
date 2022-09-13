@@ -171,7 +171,8 @@ const buildDomainBlocks = (results, domain, next=null) => {
         }
       ]);
     }
-    blocks.push(block);
+
+    blocks = blocks.concat(block);
   }
 
   return blocks;
@@ -351,7 +352,8 @@ const buildApplicationBlocks = (results, domain, next=null) => {
         }
       ]);
     }
-    blocks.push(block);
+
+    blocks = blocks.concat(block);
   }
 
   return blocks;
@@ -577,7 +579,8 @@ const buildApplicationVersionBlocks = (results, domain, next=null) => {
         }
       ]);
     }
-    blocks.push(block);
+
+    blocks = blocks.concat(block);
   }
 
   return blocks;
@@ -763,7 +766,8 @@ const buildApplicationEventBlocks = (results, domain, next=null) => {
         }
       ]);
     }
-    blocks.push(block);
+
+    blocks = blocks.concat(block);
   }
 
   return blocks;
@@ -961,7 +965,8 @@ const buildApplicationSchemaBlocks = (results, domain, next=null) => {
         }
       ]);
     }
-    blocks.push(block);
+
+    blocks = blocks.concat(block);
   }
 
   return blocks;
@@ -1543,7 +1548,8 @@ const buildSchemaBlocks = (results, domain, next=null) => {
         }
       ]);
     }
-    blocks.push(block);
+
+    blocks = blocks.concat(block);
   }
 
   return blocks;
