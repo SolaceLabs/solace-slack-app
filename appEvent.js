@@ -240,32 +240,46 @@ const appLinkSharedEvent = async({event, context, respond, say, ack, payload}) =
           type: "divider"
         }
       ]
+
+      let emptyBlock = [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "Could not find resource"
+          },
+        },
+        {
+          type: "divider"
+        }
+      ];
     
       let response = undefined;
 
       if (cmd.resource === 'domains') {
         let options = { id: cmd.domainId, pageSize: 5, pageNumber: 1}
         response = await getSolaceApplicationDomains(cmd.scope, solaceCloudToken, options)
-        if (!response.data.length)
+        if (!response.data.length) {
+          emptyBlock[0].text.text = "Could not find domain";
           resultBlock = emptyBlock;
-        else {
+        } else
           resultBlock = buildDomainBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta}); 
-          resultBlock[0] = headerBlock.concat(resultBlock[0]);
-        } 
       } else if (cmd.resource === 'applications') {
         let options = { id: cmd.applicationId, domainId: cmd.domainId, domainName: cmd.domainName, 
                         versionId: cmd.versionId, pageSize: 5, pageNumber: 1}
         if (cmd.versionId) {
           response = await getSolaceApplicationVersions(cmd.applicationId, solaceCloudToken, options)
-          if (!response.data.length)
+          if (!response.data.length) {
+            emptyBlock[0].text.text = "Could not find application version";
             resultBlock = emptyBlock;
-          else
+          } else
             resultBlock = buildApplicationVersionBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});        
         } else {
           response = await getSolaceApplications(cmd.scope, solaceCloudToken, options)
-          if (!response.data.length)
+          if (!response.data.length) {
+            emptyBlock[0].text.text = "Could not find application";
             resultBlock = emptyBlock;
-          else
+          } else
             resultBlock = buildApplicationBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});        
         }        
       } 
@@ -274,15 +288,17 @@ const appLinkSharedEvent = async({event, context, respond, say, ack, payload}) =
                         versionId: cmd.versionId, pageSize: 5, pageNumber: 1}
         if (cmd.versionId) {
           response = await getSolaceEventVersions(cmd.eventId, solaceCloudToken, options)
-          if (!response.data.length)
+          if (!response.data.length) {
+            emptyBlock[0].text.text = "Could not find event version";
             resultBlock = emptyBlock;
-          else
+          } else
             resultBlock = buildEventVersionBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});        
         } else {
           response = await getSolaceEvents(cmd.scope, solaceCloudToken, options)
-          if (!response.data.length)
+          if (!response.data.length) {
+            emptyBlock[0].text.text = "Could not find event";
             resultBlock = emptyBlock;
-          else
+          } else
             resultBlock = buildEventBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});        
         }        
       } else if (cmd.resource === 'schemas') {
@@ -290,18 +306,22 @@ const appLinkSharedEvent = async({event, context, respond, say, ack, payload}) =
                         versionId: cmd.versionId, pageSize: 5, pageNumber: 1}
         if (cmd.versionId) {
           response = await getSolaceSchemaVersions(cmd.schemaId, solaceCloudToken, options)
-          if (!response.data.length)
+          if (!response.data.length) {
+            emptyBlock[0].text.text = "Could not find schema version";
             resultBlock = emptyBlock;
-          else
+          } else
             resultBlock = buildSchemaVersionBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});        
         } else {
           response = await getSolaceSchemas(cmd.scope, solaceCloudToken, options)
-          if (!response.data.length)
+          if (!response.data.length) {
+            emptyBlock[0].text.text = "Could not find schema";
             resultBlock = emptyBlock;
-          else
+          } else
             resultBlock = buildSchemaBlocks(response.data, solaceCloudToken.domain, {cmd, options, meta: response.meta});        
         }   
       }
+
+      resultBlock = headerBlock.concat(resultBlock);
     } catch (error) {
       console.log(error);
       errorBlock = [
