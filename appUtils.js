@@ -637,7 +637,7 @@ const showExamples = async(channel_id, channel_name, user_id, actionId=null, res
   }
 
   try {
-    if (channel_name === 'directmessage') {
+    if (channel_name === 'directmessage' || channel_name.indexOf('mpdm-') === 0) {
       await respond({
         response_type: 'ephemeral',
         replace_original: false,

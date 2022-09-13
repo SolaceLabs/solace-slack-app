@@ -11,7 +11,7 @@ A Slack user must register a valid EP REST API Token to access App features. Ref
 # Install Solace EP 2.0 App for Slack
 Solace EP 2.0 App for Slack can be installed on a Slack workspace by the Slack Administrator (or a user with appropriate privileges). 
 
-1. Follow the [link](https://slack.com/oauth/v2/authorize?client_id=3559375384807.3781079860292&scope=app_mentions:read,channels:history,channels:read,chat:write,commands,groups:history,im:history,links:read,links:write,mpim:history,mpim:read,mpim:write,chat:write.public&user_scope=chat:write,links:read,links:write_) to start the Solace EP 2.0 App for Slack installation.
+1. Follow the [link](https://slack.com/oauth/v2/authorize?client_id=3559375384807.3781079860292&scope=app_mentions:read,channels:history,channels:read,chat:write,chat:write.public,commands,groups:history,im:history,im:read,im:write,links:read,links:write,mpim:history,mpim:read,mpim:write,chat:write.customize&user_scope=im:write,links:read,links:write,chat:write,mpim:write,im:history) to start the Solace EP 2.0 App for Slack installation.
 2. Depending on the workspace you have currently logged in, it will open a page displaying the set of required permissions and a button to allow installation.
 <p align="center"><img width="640" alt="auth" src="installation-imgs/1.png"></p>
 
