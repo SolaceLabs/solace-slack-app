@@ -15,19 +15,14 @@ Solace EP 2.0 App for Slack can be installed on a Slack workspace by the Slack A
 2. Depending on the workspace you have currently logged in, it will open a page displaying the set of required permissions and a button to allow installation.
 <p align="center"><img width="640" alt="auth" src="installation-imgs/1.png"></p>
 
-3. Click on the Allow button to proceed with the installation. You will be redirected to a page that warns about the ngrok mapped URL - It is ok to proceed; click on the Visit Site button. NOTE: The Solace EP 2.0 App for Slack backend currently uses the ngrok facility to provide HTTPS redirection to the local server. In the future, the App will host its HTTPS endpoint. It is ok to proceed!
-<p align="center"><img width="640" alt="auth" src="installation-imgs/2.png"></p>
-
-4. After a successful installation, you will see a Thank You! page with a link to open the Slack App. 
+1. Click on the Allow button to proceed with the installation. 
+2. After a successful installation, you will see a Thank You! page with a link to open the Slack App. 
 <p align="center"><img width="640" alt="auth" src="installation-imgs/3.png"></p>
 
-OR
-<p align="center"><img width="640" alt="auth" src="installation-imgs/4.png"></p>
-
  
-5. The App is now available for all users of the workspace. As a Slack Administrator, completing steps 1-5 would suffice to install and make the Solace EP 2.0 App for Slack accessible to all workspace users. <font color='#ff0000'>You may skip the following steps if you do not want to test the interaction with the App.</font>
+1. The App is now available for all users of the workspace. As a Slack Administrator, completing steps 1-5 would suffice to install and make the Solace EP 2.0 App for Slack accessible to all workspace users. <font color='#ff0000'>You may skip the following steps if you do not want to test the interaction with the App.</font>
 
-6. You can now see the Solace EP 2.0 App for Slack appearing in the installed apps list in the Slack Application.
+2. You can now see the Solace EP 2.0 App for Slack appearing in the installed apps list in the Slack Application.
 
 <p align="center"><img width="640" alt="auth" src="installation-imgs/5.png"></p>
 
@@ -49,9 +44,7 @@ You can now view the registration details on the App Home page
 9. <p align="center"><img width="640" alt="auth" src="installation-imgs/7.png"></p>
 
 
-10. <font color='#ff0000'>IMPORTANT</font>: Solace EP 2.0 App for Slack interactions is supported only in a channel context (any). As a first step, you need to invite the App as a member to participate in the conversation. You can do so by issuing the slash command `/invite solace` in the channel. Now, you can access all the app features from that channel.
-
-11. In any of the Workspace channels, enter `/solace`; you can see the Solace App in action.
+10. In any of the Workspace channels, enter `/solace`; you can see the Solace App in action.
 
 <p align="center"><img width="640" alt="auth" src="installation-imgs/8.png"></p>
 

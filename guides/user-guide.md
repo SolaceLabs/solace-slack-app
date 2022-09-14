@@ -22,13 +22,15 @@ In the Slack App, check and make sure that you can see the Solace EP 2.0 App for
 
 Before using the Slack App, register a valid Event Portal REST API Token and Event Portal.
 
-
->**<font color='#ff0000'>IMPORTANT</font>**: Solace EP 2.0 App for Slack interactions is supported only in a channel context (any). As a first step, you need to invite the App as a member to participate in the conversation. You can do so by issuing the slash command `/invite` solace in the channel. Now, you can access all the app features from that channel.
-
-
 # API Token and Event Portal URL Domain Registration
 
 Even though the installed Solace EP 2.0 App for Slack is available for all users, users must register their private API Token and URL domain names.
+
+>**<font color='#ff0000'>IMPORTANT</font>**: Ensure that the  `New Event Portal 2.0` flag is turned on in the Cloud Console.
+
+<p align="center"><img width="640" alt="auth" src="user-imgs/1a.png"></p>
+
+
 
 <ins>**Solace Event Portal REST API Token:**</ins> Let us generate an Event Portal REST API token. Login to Solace Cloud Console, click on the User icon at the bottom of the sidebar and choose Token Management.
 
@@ -44,7 +46,7 @@ Create the token and save it in a file or clipboard; you would need to specify t
 
 <ins>**Solace Event Portal URL Domain:**</ins> Review your Solace Cloud Console URL and note the domain name.
 
-For example, if your EP URL to Event Portal is __https://solace-sso.solace.cloud/ep/designer__, your domain name would be solace-sso.solace.cloud. Similarly, if the Event Portal URL is __https://console.solace.cloud/ep/designer__, your domain name would be __console.solace.cloud__.
+For example, if your EP URL to Event Portal is __https://solace-sso.solace.cloud/ep/designer__, your domain name would be __solace-sso.solace.cloud__. Similarly, if the Event Portal URL is __https://console.solace.cloud/ep/designer__, your domain name would be __console.solace.cloud__.
 
 You can initiate the registration by visiting the Solace EP 2.0 App for Slack’s Home page or by issuing the `/solace register` command on a channel.
 
