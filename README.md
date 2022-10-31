@@ -16,6 +16,10 @@ Refer to [installation guide](guides/installation-guide.md) for more information
 
 Refer to [user guide](guides/user-guide.md) for more information.
 
+## Intro video
+
+[Introduction & Demo of Slack App for Solace PubSub+ Event Portal](https://www.youtube.com/watch?v=S6FP9nrDjUY)
+
 ## Resources
 
 For more information try these resources:
