@@ -6,6 +6,8 @@
 
 The Solace PubSub+ Event Portal integration for Slack gives you and your teams full visibility into your Event Portal resources right in Slack channels, where you can access information about your Application Domains, Applications, Events and Schemas. This integration is an open source project, built and maintained by _Solace-Labs_.
 
+This repository contains one way of using Event Portal in your Software Development Lifecycle. Check out the [Supercharge your Software Development Lifecycle with PubSub+ Event Portal](https://solace.com/blog/software-development-lifecycle-with-event-portal) blog to learn about other ways you can use Event Portal to throughout your SDLC. 
+
 ## Installation Guide
 
 The Solace PubSub+ Event Portal integration for Slack app has <font color='#ff0000'>not</font> been published to Slack App Directory (marketplace) - it is made available as a distributed app that can be installed via an installation link. 
