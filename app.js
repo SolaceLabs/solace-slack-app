@@ -132,7 +132,7 @@ app.event('app_home_opened', appHomeOpenedEvent);
 app.event('link_shared', appLinkSharedEvent);
 app.event('tokens_revoked', appUninstalledEvent);
 
-app.message('hello', helloMessage);
+// app.message('hello', helloMessage);
 
 app.action('block_actions', fetchDependentResources);
 app.action('click_authorize', authorizeEPTokenAction);
