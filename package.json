@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@slack/bolt": "^3.3.0",
+    "@slack/bolt": "^5.1.0",
     "@solace-community/eventportal": "^1.1.0",
     "axios": "^0.27.2",
     "dotenv": "^8.6.0",
